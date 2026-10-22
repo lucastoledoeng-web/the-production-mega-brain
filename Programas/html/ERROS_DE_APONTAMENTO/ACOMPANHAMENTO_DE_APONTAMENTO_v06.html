@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ACOMPANHAMENTO DE APONTAMENTO</title>
+<style>
+/*DS-BEGIN css*/
+/* ==========================================================================
+   TOKENS — dashboard-padrao
+   Escuro = identidade já usada nos programas (APONTAMENTO / WIP / LEAD TIME).
+   Claro  = mesmas cores de destaque (azul/verde/vermelho/âmbar), fundo off-white.
+   Os nomes das variáveis são os mesmos dos programas legados (--bg, --bg1,
+   --bg2, --bd, --tx, --dim, --faint, --ac, --good, --warn, --bad) para a
+   migração ser só trocar o bloco :root.
+   O tema é controlado por <html data-theme="dark|light"> (ver ds.js).
+   ========================================================================== */
+:root{
+  color-scheme:dark;
+  /* superfícies */
+  --bg:#0a0d12;      /* fundo da página */
+  --bg1:#10151c;     /* cards, KPIs, tabelas */
+  --bg2:#151b23;     /* campos, cabeçalho de tabela, trilhas */
+  --bd:#232b36;      /* bordas */
+  /* texto */
+  --tx:#e7edf3;      /* principal */
+  --dim:#9aa7b5;     /* secundário (rótulos, legendas) */
+  --faint:#5c6b7a;   /* só dicas decorativas — contraste baixo */
+  /* semânticas */
+  --ac:#2f9bf0;      /* azul: ação, seleção, série principal */
+  --good:#5fae8a;    /* verde: ok, dentro da meta */
+  --warn:#d9a441;    /* âmbar: atenção (texto) */
+  --warn-fill:#d9a441; /* âmbar para barras/áreas/pontos (no claro é mais vivo que o texto) */
+  --bad:#e0564f;     /* vermelho: erro, fora da meta */
+  --gray:#4a5767;    /* neutro: "fica", sem dado, trânsito */
+  --on-ac:#fff;      /* texto sobre fundo --ac */
+  /* versões translúcidas (tags, destaques de linha) */
+  --ac-soft:rgba(47,155,240,.14);
+  --good-soft:rgba(95,174,138,.15);
+  --warn-soft:rgba(217,164,65,.15);
+  --bad-soft:rgba(224,86,79,.15);
+  --hover:rgba(47,155,240,.08);
+  --stripe:rgba(255,255,255,.025);
+  /* escala de calor (baixo → muito alto), vem do mapa de calor do WIP */
+  --z1:#3a7ca5;--z2:#5fae8a;--z3:#d9a441;--z4:#d9702f;--z5:#e0564f;
+  /* elevação */
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.22);
+  --shadow-pop:0 20px 50px rgba(0,0,0,.5);
+  --tt-bg:#1c232e;--overlay:rgba(0,0,0,.6);
+  /* forma e tipografia */
+  --r:8px;--r-sm:6px;--r-lg:10px;
+  --font:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#e9e9e6;      /* off-white quente (família do #e4e4e2 do modo impressão do WIP) */
+  --bg1:#f8f8f6;
+  --bg2:#efefec;
+  --bd:#d2d2cd;
+  --tx:#17202b;
+  --dim:#505a66;
+  --faint:#7b838d;
+  --ac:#0057ad;      /* azul institucional (mesmo do modo impressão do WIP) */
+  --good:#1f7a52;
+  --warn:#f09e07;
+  --warn-fill:#d87212;
+  --bad:#c0352e;
+  --gray:#80807f;
+  --on-ac:#fff;
+  --ac-soft:rgba(0,87,173,.10);
+  --good-soft:rgba(31,122,82,.12);
+  --warn-soft:rgba(143,98,0,.13);
+  --bad-soft:rgba(192,53,46,.11);
+  --hover:rgba(0,87,173,.06);
+  --stripe:rgba(23,32,43,.03);
+  --z1:#3a7ca5;--z2:#3f9a73;--z3:#c58f1d;--z4:#d06a28;--z5:#c0352e;
+  --shadow:0 1px 2px rgba(23,32,43,.08),0 6px 18px rgba(23,32,43,.07);
+  --shadow-pop:0 20px 50px rgba(23,32,43,.25);
+  --tt-bg:#fff;--overlay:rgba(23,32,43,.35);
+}
+
+/* ==========================================================================
+   COMPONENTES — dashboard-padrao  (depende de tokens.css)
+   Vocabulário inspirado no AdminLTE (app-header, small-box/info-box, card com
+   ferramentas, callout, progress, timeline) em CSS puro, sem Bootstrap.
+   Regra: nenhuma cor hexadecimal aqui — só var(--token).
+   ========================================================================== */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 var(--font);padding:24px;font-variant-numeric:tabular-nums}
+h1{font-size:20px;margin:0}h2{font-size:15px;margin:0;font-weight:600}h3{font-size:13px;margin:0;font-weight:600}
+.hide{display:none!important}
+.dim{color:var(--dim)}.faint{color:var(--faint)}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.ac{color:var(--ac)}
+.num{text-align:right}.ctr{text-align:center}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+
+/* ---- cabeçalho (app-header) ---- */
+.app-h{display:flex;gap:12px 16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}
+.app-h .sub{color:var(--dim);margin:4px 0 0}
+.app-h .act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sub{color:var(--dim)}.hint{color:var(--faint);font-size:12px}.note{color:var(--dim);font-size:12px;margin:6px 0 12px}
+.st{color:var(--dim);font-size:13px;margin-bottom:12px}.st b{color:var(--tx)}
+
+/* ---- barra de filtros ---- */
+.bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}
+.bar label,.fld{display:flex;flex-direction:column;gap:4px;color:var(--dim);font-size:12px}
+.bar label.inline{flex-direction:row;align-items:center;gap:6px;font-size:13px}
+
+/* ---- controles ---- */
+select,input[type=text],input[type=date],input[type=number],input[type=search]{background:var(--bg2);color:var(--tx);border:1px solid var(--bd);border-radius:var(--r-sm);padding:7px 10px;font:inherit;max-width:100%}
+select:hover,input:hover{border-color:var(--dim)}
+.card>h3,.card>.ch+h3{margin:0 0 8px;color:var(--dim)}
+button{font:inherit;color:var(--tx);background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r-sm);padding:7px 14px;cursor:pointer}
+button:hover{border-color:var(--ac)}
+input[type=file]{font:inherit;color:var(--dim);max-width:100%}
+input[type=file]::file-selector-button{font:inherit;color:var(--tx);background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r-sm);padding:6px 12px;margin-right:8px;cursor:pointer}
+input[type=checkbox],input[type=radio]{accent-color:var(--ac);vertical-align:middle}
+.btn,.btn2,.btn3{font:inherit;border-radius:var(--r-sm);cursor:pointer}
+.btn{background:var(--ac);color:var(--on-ac);border:0;padding:8px 14px;font-weight:600}.btn:hover{filter:brightness(1.1)}
+.btn2{background:var(--bg2);color:var(--tx);border:1px solid var(--bd);padding:7px 14px}.btn2:hover{border-color:var(--ac)}
+.btn3{background:none;color:var(--dim);border:1px solid var(--bd);padding:7px 10px}.btn3:hover{color:var(--tx);border-color:var(--bad)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.sw{display:inline-flex;border:1px solid var(--bd);border-radius:var(--r-sm);overflow:hidden;background:var(--bg2)}
+.sw button{background:none;border:0;color:var(--dim);padding:6px 12px;font:inherit;cursor:pointer}
+.sw button.on{background:var(--ac);color:var(--on-ac)}
+
+/* ---- abas ---- */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--bd);margin:14px 0 16px;overflow-x:auto}
+.tabs button{background:none;border:0;color:var(--dim);padding:9px 16px;font:inherit;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button:hover{color:var(--tx)}.tabs button.on{color:var(--tx);border-color:var(--ac)}
+.pn{display:none}.pn.on{display:block}
+
+/* ---- grades ---- */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-bottom:12px}
+.grid.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr))}
+.stack>*+*{margin-top:12px}
+
+/* ---- KPI (small-box / info-box) ---- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--r);padding:14px;position:relative;overflow:hidden}
+.kpi small{display:block;color:var(--dim);font-size:11px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:4px}
+.kpi b{display:block;font-size:26px;line-height:1.15;font-weight:700}
+.kpi i{display:block;font-style:normal;color:var(--faint);font-size:12px;margin-top:2px}
+.kpi.ac,.kpi.good,.kpi.warn,.kpi.bad{color:var(--tx)}
+.kpi.ac{box-shadow:inset 3px 0 0 var(--ac)}.kpi.good{box-shadow:inset 3px 0 0 var(--good)}
+.kpi.warn{box-shadow:inset 3px 0 0 var(--warn-fill)}.kpi.bad{box-shadow:inset 3px 0 0 var(--bad)}
+.kpi .spark{display:block;width:100%;height:28px;margin-top:8px}
+.delta{font-size:12px;font-weight:600}.delta.up{color:var(--good)}.delta.dn{color:var(--bad)}
+
+/* ---- card (com cabeçalho e ferramentas) ---- */
+.card{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+.card.flush{padding:0;overflow:hidden}
+.ch{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.card.flush>.ch{padding:10px 14px;margin:0;background:var(--bg2);border-bottom:1px solid var(--bd)}
+.ch .ttl{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--dim)}
+.ch .tools{display:flex;gap:6px;align-items:center}
+details.card{padding:0}details.card>summary{cursor:pointer;padding:12px 14px;list-style:none}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::before{content:'▸';color:var(--ac);margin-right:8px;display:inline-block;transition:transform .15s}
+details[open].card>summary::before{transform:rotate(90deg)}
+details.card>.body{padding:0 14px 14px}
+
+/* ---- callout ---- */
+.callout{background:var(--bg2);border:1px solid var(--bd);border-left:4px solid var(--ac);border-radius:var(--r-sm);padding:10px 14px;margin:0 0 12px;color:var(--dim)}
+.callout b{color:var(--tx)}
+.callout.good{border-left-color:var(--good)}.callout.warn{border-left-color:var(--warn)}.callout.bad{border-left-color:var(--bad)}
+
+/* ---- tabelas ---- */
+.tw{overflow:auto;background:var(--bg1);border:1px solid var(--bd);border-radius:var(--r);max-height:70vh}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap}
+th{position:sticky;top:0;z-index:1;color:var(--dim);font-weight:600;background:var(--bg2);border-bottom:2px solid var(--bd)}
+td.num,th.num{text-align:right}
+tbody tr:nth-child(even) td{background:var(--stripe)}
+tbody tr:hover td{background:var(--hover)}
+tbody tr.sel td{background:var(--ac-soft)}
+tr:last-child td{border-bottom:0}
+th.sortable{cursor:pointer}th.sortable:hover{color:var(--tx)}
+td.e{color:var(--faint)}
+
+/* ---- tags / chips ---- */
+.tag{display:inline-block;padding:1px 9px;border-radius:10px;font-size:12px;font-weight:600;background:var(--bg2);color:var(--dim);border:1px solid var(--bd)}
+.tag.ac{background:var(--ac-soft);color:var(--ac);border-color:transparent}
+.tag.good{background:var(--good-soft);color:var(--good);border-color:transparent}
+.tag.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent}
+.tag.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+.chip{display:inline-block;margin:0 6px 6px 0;padding:3px 10px;border-radius:12px;background:var(--bg2);border:1px solid var(--bd);cursor:pointer;font-size:12px}.chip:hover{border-color:var(--ac)}
+
+/* ---- barras horizontais (ranking) e progress ---- */
+.br{display:grid;grid-template-columns:minmax(70px,140px) 1fr 90px;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.br .bl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dim)}.br b{text-align:right;font-weight:600}
+.bt,.progress{background:var(--bg2);height:9px;border-radius:5px;overflow:hidden}
+.bt i,.progress>i{display:block;height:100%;background:var(--ac);border-radius:5px}
+.progress{height:6px}.progress.good>i{background:var(--good)}.progress.warn>i{background:var(--warn-fill)}.progress.bad>i{background:var(--bad)}
+
+/* ---- legenda ---- */
+.lg{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin:6px 0 10px}
+.lg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+/* ---- gráficos SVG: texto e grade herdam dos tokens ---- */
+svg text{fill:var(--dim);font-size:11px;font-family:var(--font)}
+svg .lb{fill:var(--tx);font-weight:600}svg .n{fill:var(--on-ac);font-weight:600}
+svg .gr{stroke:var(--bd);stroke-width:1}
+svg .s-ac{fill:var(--ac)}svg .s-good{fill:var(--good)}svg .s-warn{fill:var(--warn-fill)}svg .s-bad{fill:var(--bad)}svg .s-gray{fill:var(--gray)}
+@keyframes grow{from{transform:scaleY(0)}}
+.col{transform-box:fill-box;transform-origin:bottom;animation:grow .6s cubic-bezier(.2,.8,.2,1)}
+@media (prefers-reduced-motion:reduce){.col{animation:none}}
+
+/* ---- tooltip ---- */
+.tt{position:fixed;pointer-events:none;background:var(--tt-bg);color:var(--tx);border:1px solid var(--bd);border-radius:var(--r-sm);padding:8px 10px;font-size:12px;z-index:50;max-width:240px;box-shadow:var(--shadow-pop)}
+.tt b{display:block;color:var(--dim);font-weight:600;margin-bottom:2px}
+
+/* ---- modal ---- */
+.ov{position:fixed;inset:0;background:var(--overlay);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px}
+.ov .card{max-width:720px;width:100%;max-height:85vh;overflow-y:auto;box-shadow:var(--shadow-pop)}
+
+/* ---- estado vazio / erro ---- */
+.empty{text-align:center;color:var(--dim);padding:40px 16px;border:1px dashed var(--bd);border-radius:var(--r);background:var(--bg1)}
+.empty b{display:block;color:var(--tx);font-size:15px;margin-bottom:4px}
+.err{color:var(--bad)}
+
+/* ---- variante com sidebar (dashboards com muitas seções) ---- */
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh;margin:-24px}
+.side{background:var(--bg1);border-right:1px solid var(--bd);padding:16px 10px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.side .brand{font-weight:700;padding:4px 10px 14px}
+.side a{display:block;padding:8px 10px;border-radius:var(--r-sm);color:var(--dim);cursor:pointer;text-decoration:none}
+.side a:hover{background:var(--hover);color:var(--tx)}.side a.on{background:var(--ac-soft);color:var(--ac);font-weight:600}
+.main{padding:24px;min-width:0}
+@media (max-width:820px){.shell{grid-template-columns:1fr}.side{position:static;height:auto;border-right:0;border-bottom:1px solid var(--bd)}}
+@media (max-width:640px){body{padding:14px}.br{grid-template-columns:90px 1fr 70px}}
+
+/* ---- impressão ---- */
+@media print{.np{display:none!important}body{padding:8px}.card,.kpi,.tw{box-shadow:none;break-inside:avoid}.tw{max-height:none}}
+
+/*DS-END css*/
+#chart{background:linear-gradient(180deg,var(--bg1),var(--bg2));box-shadow:var(--shadow)}
+.cg .hv{opacity:.07;transition:opacity .15s}.cg:hover .hv{opacity:.16}.cg.sel .hv{opacity:.2}.cg[data-m]{cursor:pointer}.cg:hover .col{filter:brightness(1.12)}.na .col{animation:none}
+.pl{max-height:440px;overflow-y:auto;padding-right:4px}
+.pr{display:grid;grid-template-columns:minmax(110px,190px) 1fr 56px 78px;gap:8px;align-items:center;padding:4px 6px;border-radius:6px;cursor:pointer;font-size:13px}.pr:hover{background:var(--bg2)}.pr.sel{background:var(--bg2);box-shadow:inset 3px 0 0 var(--ac)}
+.pr b{text-align:right}.pr .st{text-align:right;margin:0}
+.pt{position:relative;background:var(--bg2);height:10px;border-radius:5px}.pt i{display:block;height:100%;border-radius:5px}.pt u{position:absolute;top:-3px;bottom:-3px;border-left:1px dashed var(--tx);opacity:.6}
+.ov[hidden]{display:none!important}.pctx,.hatch{display:none}
+html.pm-bw[data-theme]{--good:hsl(0 0% 80%);--bad:hsl(0 0% 12%);--warn:hsl(0 0% 50%);--ac:hsl(0 0% 28%);--dim:hsl(0 0% 25%);--bd:hsl(0 0% 62%);--bg2:hsl(0 0% 93%)}
+.pm-bw .hatch{display:block}.pm-bw svg .nc{fill:var(--tx)}
+@media print{
+  @page{size:A4 portrait;margin:8mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{padding:0;font-size:10.5px;background:none}
+  #t-resumo,#t-peca,#t-mods{display:none!important}
+  #t-geral{display:block!important}
+  .pctx{display:block;margin:0 0 6px;color:var(--dim);font-size:10px}
+  .app-h{margin-bottom:6px;padding-bottom:6px}.app-h .sub{display:none}
+  .kpis{gap:6px;margin-bottom:6px}.kpi{padding:6px 10px}.kpi b{font-size:17px}.kpi i{font-size:9.5px}
+  .card{padding:8px 10px;break-inside:avoid;box-shadow:none}
+  #phasePct,#defErros{margin-top:6px!important}
+  #chart{background:none}#chart svg{max-height:74mm}
+  .cg .hv{display:none}
+  .pl{max-height:none;overflow:visible}.pr{padding:1px 4px;font-size:10px}
+  .hint{font-size:9.5px}
+  #defErros>summary{padding:6px 10px;font-size:10.5px}#defErros>summary::before{display:none}
+  #defErros .body{padding:0 10px 6px;display:flex;flex-direction:column}
+  #defErros .bt{order:1;margin-top:6px!important}#defErros .hint{order:2;font-size:8px;margin-top:2px!important}
+  #defErros .grid{order:3;gap:10px;margin-top:6px!important}#defErros .dn{display:none}
+  .callout{padding:1px 6px;margin:0;background:none;border-top:0;border-right:0;border-bottom:0}
+  .callout h3{margin:0 0 1px;font-size:7.5px}.callout p{font-size:7px;line-height:1.25}.callout .tag{font-size:7px;padding:0 5px;margin-left:4px}
+  body.p-nodef #defErros{display:none}
+  body.p-ind #t-resumo{display:block!important;break-before:page}
+  #t-resumo .kpis{margin-bottom:8px}#t-resumo .grid{gap:8px}#t-resumo .card{padding:8px 10px;margin:0}#t-resumo h2{margin:0 0 2px;font-size:11px}#t-resumo .br{margin:3px 0;font-size:10px}
+}
+.ms{position:relative}.ms-b{min-width:120px;text-align:left}
+.ms-p{position:absolute;z-index:30;top:calc(100% + 4px);left:0;min-width:190px;max-height:280px;overflow:auto;background:var(--bg1);border:1px solid var(--bd);border-radius:var(--r-sm);padding:6px;box-shadow:var(--shadow)}
+.ms-p[hidden]{display:none}.bar .ms-i{flex-direction:row;align-items:center;gap:8px;font-size:13px;color:var(--tx);padding:4px 6px;border-radius:4px;cursor:pointer;white-space:nowrap}.bar .ms-i:hover{background:var(--bg2)}
+.callout[data-tp]{cursor:pointer;transition:opacity .15s,box-shadow .15s}.callout[data-tp]:hover{box-shadow:0 0 0 1px var(--bd)}.callout.sel{box-shadow:0 0 0 1px var(--ac)}.callout.dim{opacity:.5}
+.sq{display:inline-block;width:10px;height:10px;border-radius:3px;margin:0 4px 0 8px}
+.bt i.c1,.sq.c1{background:var(--bad)}.bt i.c2,.sq.c2{background:var(--ac)}
+.pm-bw .bt i.c1,.pm-bw .sq.c1{background:hsl(0 0% 6%)}
+.pm-bw .bt i.c2,.pm-bw .sq.c2{background:repeating-linear-gradient(45deg,hsl(0 0% 36%) 0 3px,hsl(0 0% 92%) 3px 6px);box-shadow:inset 0 0 0 1px hsl(0 0% 30%)}
+.pm-bw .callout:not(.bad){border-left-color:hsl(0 0% 55%)}
+.pr .bl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.callout h3{color:var(--tx);margin:0 0 6px}.callout .tag{margin-left:6px}.callout p,.dn{margin:0;color:var(--dim);font-size:13px}.dn{margin-top:10px}
+</style><script>/*DS-BEGIN js*/
+/* ==========================================================================
+   ds.js — runtime mínimo do dashboard-padrao (sem dependências)
+   Expõe window.DS: tema, abas, formatação pt-BR, tooltip, CSV, sparkline.
+   ========================================================================== */
+(function(){
+const root=document.documentElement;
+const get=k=>{try{return localStorage.getItem(k)}catch(_){return null}};
+const set=(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}};
+
+/* ---- TEMA: 'auto' | 'light' | 'dark' ------------------------------------ */
+const mq=window.matchMedia?matchMedia('(prefers-color-scheme: light)'):null;
+let mode=get('ds-theme')||'auto';
+function resolve(m){return m==='auto'?(mq&&mq.matches?'light':'dark'):m}
+function applyTheme(m){
+  mode=m;set('ds-theme',m);root.setAttribute('data-theme',resolve(m));
+  document.querySelectorAll('[data-theme-set]').forEach(b=>b.classList.toggle('on',b.dataset.themeSet===m));
+  document.dispatchEvent(new CustomEvent('ds:theme',{detail:resolve(m)}));
+}
+root.setAttribute('data-theme',resolve(mode));           // aplica já, sem piscar
+if(mq&&mq.addEventListener)mq.addEventListener('change',()=>{if(mode==='auto')applyTheme('auto')});
+// impressão sempre em claro (economiza tinta e fica legível)
+let prev=null;
+addEventListener('beforeprint',()=>{prev=root.getAttribute('data-theme');root.setAttribute('data-theme','light')});
+addEventListener('afterprint',()=>{if(prev)root.setAttribute('data-theme',prev)});
+
+/* ---- ABAS: botões [data-t] ↔ painéis #p-<t> (class .pn) ------------------- */
+function tabs(sel,onChange){
+  const box=document.querySelector(sel);if(!box)return;
+  const btns=[...box.querySelectorAll('[data-t]')];
+  const show=t=>{btns.forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+    document.querySelectorAll('.pn').forEach(p=>p.classList.toggle('on',p.id==='p-'+t));
+    if(onChange)onChange(t)};
+  btns.forEach(b=>b.addEventListener('click',()=>show(b.dataset.t)));
+  return show;
+}
+
+/* ---- FORMATAÇÃO pt-BR ---------------------------------------------------- */
+const nf=(v,d=0)=>v==null||isNaN(v)?'—':(+v).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct=(v,d=1)=>v==null||isNaN(v)?'—':nf(v*100,d)+'%';        // 0.253 → "25,3%"
+const dur=min=>{if(min==null||isNaN(min))return '—';const h=Math.floor(min/60),m=Math.round(min%60);return h?h+'h'+String(m).padStart(2,'0'):m+'min'};
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+
+/* ---- TOOLTIP: DS.tip(elemento, ()=>'<b>Título</b>texto') ------------------ */
+let tt=null;
+function tip(el,html){
+  el.addEventListener('mousemove',e=>{
+    if(!tt){tt=document.createElement('div');tt.className='tt';document.body.appendChild(tt)}
+    tt.innerHTML=typeof html==='function'?html():html;
+    const w=tt.offsetWidth,h=tt.offsetHeight;
+    tt.style.left=Math.min(e.clientX+14,innerWidth-w-8)+'px';tt.style.top=Math.min(e.clientY+14,innerHeight-h-8)+'px';
+  });
+  el.addEventListener('mouseleave',()=>{if(tt){tt.remove();tt=null}});
+}
+
+/* ---- CSV (';' do ERP, UTF-8 ou windows-1252, arquivos grandes em fluxo) ----- */
+async function readCsv(file,onLine,onProgress){
+  const rd=file.stream().getReader();let dec=null,buf='',n=0;
+  for(;;){
+    const {done,value}=await rd.read();if(done)break;n+=value.length;
+    if(!dec){let e='utf-8';try{new TextDecoder('utf-8',{fatal:true}).decode(value,{stream:true})}catch(_){e='windows-1252'}dec=new TextDecoder(e)}
+    buf+=dec.decode(value,{stream:true});const i=buf.lastIndexOf('\n');if(i<0)continue;
+    const ls=buf.slice(0,i).split('\n');buf=buf.slice(i+1);
+    for(const l of ls)onLine(l.replace('\r',''));
+    if(onProgress)onProgress(Math.round(n/file.size*100));
+  }
+  if(buf)onLine(buf.replace('\r',''));
+}
+
+/* ---- SPARKLINE: string SVG; DS.spark([1,3,2], 'var(--ac)') ------------------ */
+function spark(vals,color='var(--ac)',w=120,h=28){
+  if(!vals||vals.length<2)return '';
+  const mn=Math.min(...vals),mx=Math.max(...vals),r=mx-mn||1,p=2;
+  const pts=vals.map((v,i)=>[p+i*(w-2*p)/(vals.length-1),h-p-(v-mn)/r*(h-2*p)]);
+  const d=pts.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join('');
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">`+
+    `<path d="${d}L${w-p} ${h}L${p} ${h}Z" fill="${color}" opacity=".14"/>`+
+    `<path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+/* ---- ordenação de tabela: clique em <th class="sortable" data-k="..."> ------- */
+function sortable(table){
+  table.querySelectorAll('th.sortable').forEach((th,ci)=>th.addEventListener('click',()=>{
+    const asc=th.dataset.dir!=='asc';table.querySelectorAll('th').forEach(x=>delete x.dataset.dir);th.dataset.dir=asc?'asc':'desc';
+    const rows=[...table.tBodies[0].rows],i=th.cellIndex;
+    const val=r=>{const t=r.cells[i].dataset.v??r.cells[i].textContent.trim();const n=parseFloat(String(t).replace(/\./g,'').replace(',','.'));return isNaN(n)?t:n};
+    rows.sort((a,b)=>{const x=val(a),y=val(b);return (x>y?1:x<y?-1:0)*(asc?1:-1)});
+    rows.forEach(r=>table.tBodies[0].appendChild(r));
+  }));
+}
+
+/* ---- seletor de tema: <button data-theme-set="auto|light|dark"> ------------- */
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('[data-theme-set]').forEach(b=>b.addEventListener('click',()=>applyTheme(b.dataset.themeSet)));
+  document.querySelectorAll('[data-theme-set]').forEach(b=>b.classList.toggle('on',b.dataset.themeSet===mode));
+});
+
+window.DS={applyTheme,theme:()=>root.getAttribute('data-theme'),tabs,nf,pct,dur,esc,$,tip,readCsv,spark,sortable,
+  /* lê um token atual (para canvas/libs que não entendem var()) */
+  css:n=>getComputedStyle(root).getPropertyValue(n).trim()};
+})();
+
+/*DS-END js*/</script></head><body>
+<header class="app-h">
+  <div><h1>ACOMPANHAMENTO DE APONTAMENTO</h1><div class="sub">Apontamentos por OF_PC, linha e fase conforme a relação de recursos cadastrada</div></div>
+  <div class="act np">
+    <button class="btn" id="bCsv">Importar apontamentos (CSV)</button>
+    <button class="btn2" id="bMod">Importar modelo_recurso.txt</button>
+    <input type="file" id="fCsv" accept=".csv,.txt" class="hide"><input type="file" id="fMod" accept=".txt,.csv" class="hide">
+    <div class="sw" role="group" aria-label="Tema"><button data-theme-set="auto">Auto</button><button data-theme-set="light">Claro</button><button data-theme-set="dark">Escuro</button></div>
+    <button class="btn2" id="bPrint">Imprimir / PDF</button>
+  </div>
+</header>
+<div class="st" id="status">Importe o CSV de apontamentos e o arquivo de modelos para começar.</div>
+<div class="bar np"><label>Considerar <select id="oQtd"><option value="1">só Qtd.Prod = 1</option><option value="all">todos os apontamentos</option></select></label></div>
+<div class="tabs np" id="tabs"><button data-t="geral" class="on">Visão geral</button><button data-t="resumo">Indicadores</button><button data-t="peca">Consultar OF_PC</button><button data-t="mods">Modelos</button></div>
+<div class="bar np" id="filtros">
+  <div class="fld"><span>Linha</span><div class="ms" id="ms-lin"></div></div>
+  <div class="fld"><span>Ano</span><div class="ms" id="ms-ano"></div></div>
+  <div class="fld"><span>Fase</span><div class="ms" id="ms-fase"></div></div>
+  <div class="fld"><span>Mês</span><div class="ms" id="ms-mes"></div></div>
+  <label>Tipo de erro <select id="fTipo"><option value="">Todos</option><option value="nao">Não apontado</option><option value="seq">Fora de sequência</option></select></label>
+</div>
+<section id="t-geral">
+  <div class="pctx" id="printCtx"></div>
+  <div class="kpis" id="kpisG"></div>
+  <div class="card" id="chart"></div>
+  <div class="card" id="phasePct" style="margin-top:12px"></div>
+  <details class="card" id="defErros" style="margin-top:12px"><summary id="defSum"><b>O que é considerado erro?</b></summary><div class="body" id="defBody"></div></details>
+  <div class="hint" style="margin-top:8px">Total = apontamentos esperados no processo de cada OF_PC. Errados = fora de sequência (mês da data apontada) + não apontados (mês do último apontamento da peça). Certos = total − errados. Fase = fase do recurso (tabela de fases). Linha e fase são classificadas pela relação de recursos incorporada ao programa; recursos sem classificação na relação aparecem como "Sem linha cadastrada" ou "Sem fase cadastrada".</div>
+</section>
+<section id="t-resumo" class="hide"></section>
+<section id="t-peca" class="hide">
+  <div class="bar"><input type="text" id="qBusca" placeholder="Ex.: 255947-1"><button class="btn2" id="qBtn">Ver</button></div>
+  <div class="hint">Peças com mais erros:</div><div id="chips"></div><br><div id="rep"></div>
+</section>
+<section id="t-mods" class="hide"></section>
+
+<div class="ov np" id="ovPrint" hidden><div class="card" style="max-width:420px">
+  <div class="ch"><span class="ttl">Imprimir / gerar PDF</span></div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <label>Versão <select id="pMode"><option value="color">Colorida</option><option value="bw">Preto e branco</option></select></label>
+    <label>Fases no ranking de % de erros <select id="pTop"><option>5</option><option selected>8</option><option>10</option><option>12</option></select></label>
+    <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="pDef" checked> Incluir gráfico e critérios de erro (rodapé)</label>
+    <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="pInd"> Incluir página Indicadores (2ª folha)</label>
+  </div>
+  <div class="hint" style="margin-top:10px">Sai em 1 folha A4 (retrato) com a Visão geral nos filtros atuais; com a opção marcada, os Indicadores saem na 2ª folha. Para PDF, escolha "Salvar como PDF" na janela de impressão.</div>
+  <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn2" id="pCancel">Cancelar</button><button class="btn" id="pGo">Imprimir / PDF</button></div>
+</div></div>
+<script>
+/*
+  MAPA DO CÓDIGO
+  1. REL: cadastro de recursos, linhas, fases e descrições.
+  2. Auxiliares: acesso ao DOM, escape de texto e variáveis de estado.
+  3. Arquivos: leitura do CSV, interpretação dos apontamentos e modelos.
+  4. Análise: compara apontamentos com a sequência esperada do modelo.
+  5. Indicadores: monta os cartões, rankings e tabelas de resumo.
+  6. Filtros do gráfico: linhas vêm da relação completa; fases dependem da linha.
+  7. Gráfico: agrega os apontamentos por mês e aplica os filtros selecionados.
+  8. Consulta OF_PC: exibe a sequência esperada e o status de cada recurso.
+  9. Eventos: conecta botões, filtros, importação de arquivos e abas.
+*/
+// ============================================================
+// 1. RELAÇÃO DE RECURSOS: LINHA, FASE E DESCRIÇÃO
+// ============================================================
+const REL={
+  '101':{linha:'TC',fase:'REGULAGEM',desc:'REGULAGEM N1'},
+  '102':{linha:'TC',fase:'REGULAGEM',desc:'REGULAGEM N2'},
+  '103':{linha:'TC',fase:'REGULAGEM',desc:'REGULAGEM N3'},
+  '104':{linha:'TC',fase:'REGULAGEM',desc:'REGULAGEM N4'},
+  '105':{linha:'TC',fase:'REGULAGEM',desc:'REGULAGEM N5'},
+  '106':{linha:'TC',fase:'REGULAGEM',desc:'REGULAGEM N6'},
+  '107':{linha:'TC',fase:'REGULAGEM',desc:'REGULAGEM N7'},
+  '201':{linha:'TC',fase:'CHECAGEM',desc:'CHECAGEM N1'},
+  '202':{linha:'TC',fase:'CHECAGEM',desc:'CHECAGEM N2'},
+  '203':{linha:'TC',fase:'CHECAGEM',desc:'CHECAGEM N3'},
+  '204':{linha:'TC',fase:'CHECAGEM',desc:'CHECAGEM N4'},
+  '205':{linha:'TC',fase:'CHECAGEM',desc:'CHECAGEM N5'},
+  '206':{linha:'TC',fase:'CHECAGEM',desc:'CHECAGEM N6'},
+  '207':{linha:'TC',fase:'CHECAGEM',desc:'CHECAGEM N7'},
+  '301':{linha:'TC',fase:'COLCHAO',desc:'COLCHAO N1'},
+  '302':{linha:'TC',fase:'COLCHAO',desc:'COLCHAO N2'},
+  '303':{linha:'TC',fase:'COLCHAO',desc:'COLCHAO N3'},
+  '304':{linha:'TC',fase:'COLCHAO',desc:'COLCHAO N4'},
+  '305':{linha:'TC',fase:'COLCHAO',desc:'COLCHAO N5'},
+  '306':{linha:'TC',fase:'COLCHAO',desc:'COLCHAO N6'},
+  '307':{linha:'TC',fase:'COLCHAO',desc:'COLCHAO N7'},
+  '401':{linha:'TC',fase:'BOBINAGEM SECUNDARIA TC',desc:'BOBINAGEM N1'},
+  '402':{linha:'TC',fase:'BOBINAGEM SECUNDARIA TC',desc:'BOBINAGEM N2'},
+  '403':{linha:'TC',fase:'BOBINAGEM SECUNDARIA TC',desc:'BOBINAGEM N3'},
+  '404':{linha:'TC',fase:'BOBINAGEM SECUNDARIA TC',desc:'BOBINAGEM N4'},
+  '405':{linha:'TC',fase:'BOBINAGEM SECUNDARIA TC',desc:'BOBINAGEM N5'},
+  '406':{linha:'TC',fase:'BOBINAGEM SECUNDARIA TC',desc:'BOBINAGEM N6'},
+  '407':{linha:'TC',fase:'BOBINAGEM SECUNDARIA TC',desc:'BOBINAGEM N7'},
+  '501':{linha:'TESTE',fase:'BOB TESTE',desc:'BOB TESTE / ABERTURA RELATORIO'},
+  '502':{linha:'TESTE',fase:'BOB TESTE',desc:'BOB TESTE / CURVA EXATIDAO RO'},
+  '601':{linha:'TC',fase:'ACOPLAMENTO',desc:'ACOPLAMENTO'},
+  '650':{linha:'TC',fase:'RESINA CB',desc:'RESINA CB'},
+  '660':{linha:'TC',fase:'SOLDA CB',desc:'SOLDA CB'},
+  '701':{linha:'TESTE',fase:'CB TESTE',desc:'CB TESTE / INDUZIDA'},
+  '702':{linha:'TESTE',fase:'CB TESTE',desc:'CB TESTE / BAIXA TENSAO'},
+  '703':{linha:'TESTE',fase:'CB TESTE',desc:'CB TESTE / CURVA EXATIDAO RO'},
+  '704':{linha:'TESTE',fase:'CB TESTE',desc:'CB TESTE / ENCERRAMENTO'},
+  '801':{linha:'TC',fase:'ISOLAMENTO',desc:'ISOLAMENTO <= 245KV'},
+  '802':{linha:'TC',fase:'ISOLAMENTO',desc:'ISOLAMENTO >= 362KV'},
+  '901':{linha:'TC',fase:'SECAGEM',desc:'SECAGEM TC'},
+  '1001':{linha:'TC',fase:'FARADIZACAO',desc:'FARADIZACAO TC'},
+  '1101':{linha:'TP',fase:'BOBINAGEM PRIMARIA TP',desc:'BOBINAGEM PRIMARIA TP'},
+  '1201':{linha:'TP',fase:'MONTAGEM DEFLETOR',desc:'MONTAGEM DEFLETOR'},
+  '1301':{linha:'TP',fase:'REBATIMENTO',desc:'REBATIMENTO'},
+  '1401':{linha:'TP',fase:'SECAGEM',desc:'SECAGEM TPI'},
+  '1501':{linha:'TP',fase:'FARADIZACAO TP',desc:'FARADIZACAO TPI'},
+  '1601':{linha:'TP',fase:'BOBINAGEM SECUNDARIA TP',desc:'BOBINAGEM SECUNDARIA TPI'},
+  '1701':{linha:'TP',fase:'MONTAGEM EM CUBA',desc:'MONTAGEM EM CUBA TPI'},
+  '1710':{linha:'TP',fase:'MONTAGEM TRAVESSA',desc:'MONTAGEM TRAVESSA TPI'},
+  '1720':{linha:'TESTE',fase:'PA TESTE',desc:'PA TESTE / ABERTURA RELATORIO'},
+  '1721':{linha:'TESTE',fase:'PA TESTE',desc:'PA TESTE / RESISTENCIA OHMICA'},
+  '1722':{linha:'TESTE',fase:'PA TESTE',desc:'PA TESTE / BAIXA TENSAO'},
+  '1723':{linha:'TESTE',fase:'PA TESTE',desc:'PA TESTE / EXATIDAO'},
+  '1724':{linha:'TESTE',fase:'PA TESTE',desc:'PA TESTE / ENCERRAMENTO'},
+  '1801':{linha:'TC',fase:'BOBINAGEM PRIMARIA TC',desc:'BOBINAGEM PRIMARIA TC'},
+  '1810':{linha:'TC',fase:'FUNDICAO AT',desc:'TRAVESSA SECUNDARIA'},
+  '1820':{linha:'TC',fase:'FUNDICAO AT',desc:'AQUECIMENTO PARTE ATIVA TC'},
+  '1830':{linha:'TC',fase:'FUNDICAO AT',desc:'SECAGEM PARTE ATIVA TC'},
+  '1840':{linha:'TC',fase:'FUNDICAO AT',desc:'MONTAGEM MOLDE FD TC'},
+  '1850':{linha:'TC',fase:'FUNDICAO AT',desc:'FUNDICAO AT'},
+  '1870':{linha:'TC',fase:'FUNDICAO AT',desc:'ACABAMENTO FD TC'},
+  '1900':{linha:'TC',fase:'MONTAGEM EM CUBA',desc:'MONTAGEM CUBA TCM<=245'},
+  '1905':{linha:'TC',fase:'FUNDICAO',desc:'FUNDICAO AT TCM <= 245 KV'},
+  '1910':{linha:'TC',fase:'MONTAGEM EM CUBA',desc:'MONTAGEM CUBA TCM>362'},
+  '1915':{linha:'TC',fase:'FUNDICAO',desc:'FUNDICAO AT TCM >= 362 KV'},
+  '2001':{linha:'TP',fase:'MONTAGEM PORCELANA',desc:'MONTAGEM PORCELANA TPI'},
+  '2002':{linha:'TC',fase:'MONTAGEM PORCELANA',desc:'MONTAGEM PORCELANA TC < 245 KV'},
+  '2004':{linha:'TC',fase:'MONTAGEM MEMBRANA',desc:'MONTAGEM MEMBRANA TC <245'},
+  '2006':{linha:'TC',fase:'MONTAGEM TRAVESSA',desc:'MONTAGEM TRAVESSA TC<=245'},
+  '2010':{linha:'TC',fase:'MONTAGEM PORCELANA',desc:'MONTAGEM PORCELANA >362'},
+  '2016':{linha:'TC',fase:'MONTAGEM TRAVESSA',desc:'MONTAGEM TRAVESSA >362'},
+  '2101':{linha:'TESTE',fase:'PRE TRAT',desc:'PRE TRAT / RESISTENCIA OHMICA'},
+  '2102':{linha:'TESTE',fase:'PRE TRAT',desc:'PRE TRAT / INDUZIDA'},
+  '2103':{linha:'TESTE',fase:'PRE TRAT',desc:'PRE TRAT / BAIXA TENSAO'},
+  '2104':{linha:'TESTE',fase:'PRE TRAT',desc:'PRE TRAT / EXATIDAO'},
+  '2105':{linha:'TESTE',fase:'PRE TRAT',desc:'PRE TRAT / ENCERRAMENTO'},
+  '3001':{linha:'JUNTOS',fase:'LOGETE',desc:'SECAGEM <= 245 KV'},
+  '3010':{linha:'JUNTOS',fase:'LOGETE',desc:'SECAGEM >= 362 KV'},
+  '3100':{linha:'JUNTOS',fase:'RAMPA DE OLEO',desc:'ENCHIMENTO DE OLEO'},
+  '3200':{linha:'JUNTOS',fase:'AC INICIAL',desc:'ACABAMENTO INICIAL AT'},
+  '3240':{linha:'TESTE',fase:'AP TESTE TP',desc:'AP TESTE TPI / INDUZIDA + D.P.'},
+  '3241':{linha:'TESTE',fase:'AP TESTE TP',desc:'AP TESTE TPI / A.T. + B.T.'},
+  '3242':{linha:'TESTE',fase:'AP TESTE TP',desc:'AP TESTE TPI / CAPACIT. + T.D.'},
+  '3243':{linha:'TESTE',fase:'AP TESTE TP',desc:'AP TESTE TPI / EXATIDAO'},
+  '3244':{linha:'TESTE',fase:'AP TESTE TP',desc:'AP TESTE TPI / RES. OHMICA'},
+  '3245':{linha:'TESTE',fase:'AP TESTE TP',desc:'AP TESTE TPI / RES. ISOLAMENTO'},
+  '3250':{linha:'TESTE',fase:'AP TESTE TP',desc:'AP TESTE TPI / ENCERRAMENTO'},
+  '3260':{linha:'TESTE',fase:'AP TESTE TC',desc:'AP TESTE TC / EXATIDAO'},
+  '3261':{linha:'TESTE',fase:'AP TESTE TC',desc:'AP TESTE TC / AT E DP'},
+  '3262':{linha:'TESTE',fase:'AP TESTE TC',desc:'AP TESTE TC / INDUZIDA'},
+  '3263':{linha:'TESTE',fase:'AP TESTE TC',desc:'AP TESTE TC / BAIXA TENSAO'},
+  '3264':{linha:'TESTE',fase:'AP TESTE TC',desc:'AP TESTE TC / RES. OHMICA'},
+  '3265':{linha:'TESTE',fase:'AP TESTE TC',desc:'AP TESTE TC / RES. ISOLAMENTO'},
+  '3266':{linha:'TESTE',fase:'AP TESTE TC',desc:'AP TESTE TC / CAPACIT. + TD'},
+  '3267':{linha:'TESTE',fase:'AP TESTE TC',desc:'AP TESTE TC / ENCERRAMENTO'},
+  '3301':{linha:'JUNTOS',fase:'PRIMER',desc:'PRIMER'},
+  '3302':{linha:'JUNTOS',fase:'ENCHIMENTO',desc:'ENCHIMENTO'},
+  '3303':{linha:'JUNTOS',fase:'AC PINTURA',desc:'ACABAMENTO PINTURA'},
+  //'3304':{linha:'Sem linha cadastrada',fase:'Sem fase cadastrada',desc:'PRIMER - [OFF]'},
+  '3400':{linha:'JUNTOS',fase:'AC FINAL',desc:'ACABAMENTO FINAL AT'},
+  '3450':{linha:'JUNTOS',fase:'INSPECAO',desc:'INSPECAO AT'},
+  '3500':{linha:'JUNTOS',fase:'EMBALAGEM',desc:'EMBALAGEM AT'}
+};
+// ============================================================
+// 2. FUNÇÕES AUXILIARES E ESTADO DA APLICAÇÃO
+// ============================================================
+const rel=r=>REL[String(r)]||{linha:'Sem linha cadastrada',fase:'Sem fase cadastrada',desc:''};
+const fase=r=>rel(r).fase;
+const $=id=>document.getElementById(id);
+const f1=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let rows=[],models=null,errs=[],S={},FS={},PC={},DESC={},OP={},MS={},MO={},AP=[],printTitle='';
+// Filtros: conjuntos vazios = "todos". Aplicados na Visão geral e nos Indicadores.
+const FLT={lin:new Set(),ano:new Set(),fase:new Set(),mes:new Set(),tipo:''},MSI={};
+const inS=(st,v)=>st.size===0||st.has(String(v));
+// filtro de tipo: o outro tipo de erro sai da base (t = apontamentos considerados, e = erros considerados)
+const adj=o=>({t:o.t-(FLT.tipo==='nao'?o.s:FLT.tipo==='seq'?o.n:0),e:FLT.tipo==='nao'?o.n:FLT.tipo==='seq'?o.s:o.e,n:o.n,s:o.s});
+const lbl=k=>{const st=FLT[k];if(!st.size)return 'Todas';const it=MSI[k]||[];return st.size<=3?[...st].map(v=>(it.find(i=>i.v===v)||{t:v}).t).join(', '):st.size+' selecionadas'};
+const ctxText=(ks=['lin','ano','fase','mes'])=>ks.map(k=>({lin:'Linha',ano:'Ano',fase:'Fase',mes:'Mês'}[k])+': '+lbl(k)).join(' · ')+(FLT.tipo?' · Tipo: '+(FLT.tipo==='nao'?'Não apontado':'Fora de sequência'):'');
+function msRender(k,items){
+  MSI[k]=items;const el=$('ms-'+k),st=FLT[k];
+  [...st].forEach(v=>{if(!items.some(i=>i.v===v))st.delete(v)});
+  const pp=el.querySelector('.ms-p'),open=pp&&!pp.hidden;
+  el.innerHTML=`<button type="button" class="btn2 ms-b">${esc(lbl(k))} ▾</button><div class="ms-p"${open?'':' hidden'}><label class="ms-i"><input type="checkbox" data-all${st.size?'':' checked'}> Todas</label>${items.map(i=>`<label class="ms-i"><input type="checkbox" value="${esc(i.v)}"${st.has(i.v)?' checked':''}> ${esc(i.t)}</label>`).join('')}</div>`;
+}
+
+// ============================================================
+// 3. LEITURA E INTERPRETAÇÃO DOS ARQUIVOS
+// ============================================================
+async function readF(f){const b=await f.arrayBuffer();let t=new TextDecoder('utf-8').decode(b);if(t.includes('\ufffd'))t=new TextDecoder('windows-1252').decode(b);return t.replace(/^\uFEFF/,'')}
+function pd(s){const m=(s||'').match(/(\d+)\/(\d+)\/(\d+)(?:\s+(\d+):(\d+))?/);return m?Date.UTC(+m[3],m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)):NaN}
+function fmt(ms){if(ms==null||isNaN(ms))return '—';const d=new Date(ms),p=n=>String(n).padStart(2,'0');return `${p(d.getUTCDate())}/${p(d.getUTCMonth()+1)}/${d.getUTCFullYear()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`}
+
+function parseCSV(t){
+  const L=t.split(/\r?\n/).filter(x=>x.trim());
+  const H=L[0].split(';').map(x=>x.trim().toUpperCase());
+  const f=p=>H.findIndex(h=>p.some(q=>h.startsWith(q)));
+  const c={key:f(['OF_PC']),mod:f(['MODELO']),fim:f(['DT/HR FIM','DT/HORA FIM']),rec:f(['RECURSO']),desc:f(['DESCRICAO']),op:f(['OPERADOR']),q:f(['QTD'])};
+  if(c.key<0||c.rec<0||c.fim<0)throw new Error('Colunas OF_PC, Recurso e DT/HR FIM não encontradas');
+  const g=(p,i)=>(i<0?'':(p[i]||'')).trim();
+  DESC={};
+  return L.slice(1).map((l,i)=>{const p=l.split(';'),r={key:g(p,c.key),mod:g(p,c.mod).toUpperCase(),fim:pd(g(p,c.fim)),rec:g(p,c.rec),op:g(p,c.op),q:parseInt(g(p,c.q)),i};
+    if(r.rec&&!DESC[r.rec])DESC[r.rec]=g(p,c.desc);return r}).filter(r=>r.key&&r.rec&&!isNaN(r.fim));
+}
+
+// Formato: linha de cabeçalho com modelos separados por ";" e, abaixo, uma linha por nível (recursos separados por ";", {} = opcional).
+function parseModels(t){
+  const M={};let cur=null;
+  for(let ln of t.split(/\r?\n/)){
+    ln=ln.trim();if(!ln)continue;
+    if(/^[\d;{}\s]+$/.test(ln)){
+      if(cur){const r=ln.match(/\d+/g);if(r)cur.lv.push({opt:ln.includes('{'),r})}
+    }else{
+      const g={lv:[],idx:null};cur=g;
+      ln.split(';').map(x=>x.trim().toUpperCase()).filter(Boolean).forEach(m=>{M[m]=g});
+    }
+  }
+  const seen=new Set();
+  for(const k in M){const g=M[k];if(seen.has(g))continue;seen.add(g);g.idx={};g.lv.forEach((l,i)=>l.r.forEach(r=>{if(!(r in g.idx))g.idx[r]={l:i+1,opt:l.opt}}))}
+  return M;
+}
+
+// ============================================================
+// 4. ANÁLISE DOS APONTAMENTOS E IDENTIFICAÇÃO DE ERROS
+// ============================================================
+function analyze(){
+  errs=[];FS={};PC={};OP={};MS={};MO={};AP=[];S={sumRate:0,pecas:0,comErro:0,apont:rows.length,exp:0,rec:0,nao:0,seq:0,ign:0};
+  if(!rows.length||!models)return;
+  const G=new Map();rows.forEach(r=>{if(!G.has(r.key))G.set(r.key,[]);G.get(r.key).push(r)});
+  const only1=$('oQtd').value==='1';
+  for(const [key,ev0] of G){
+    const mod=ev0[0].mod,M=models[mod];
+    if(!M){S.ign++;continue}                       // modelo sem organograma: ignora
+    const rec={};
+    (only1?ev0.filter(e=>e.q===1):ev0).forEach(e=>{if(M.idx[e.rec]&&(!rec[e.rec]||e.fim>=rec[e.rec].fim))rec[e.rec]=e}); // recurso não escrito: ignora
+    const ks=Object.keys(rec);if(!ks.length)continue;
+    S.pecas++;
+    const lin=mod.startsWith('TC')?'TC':mod.startsWith('TP')?'TP':'Outros',lastT=Math.max(...ks.map(r=>rec[r].fim));
+    const bump=(t,tp,r,op)=>{const d=new Date(t);AP.push({key,mod,l:rel(r).linha,y:d.getUTCFullYear(),m:d.getUTCMonth(),f:fase(r),r,op:op||'',tp});const k=rel(r).linha+'|'+d.getUTCFullYear()+'|'+d.getUTCMonth()+'|'+fase(r),o=MO[k]||(MO[k]={t:0,e:0,n:0,s:0});o.t++;if(tp!=='ok'){o.e++;tp==='nao'?o.n++:o.s++}};
+    let ep=0,rp=0;const maxL=Math.max(...ks.map(r=>M.idx[r].l)),rep=[];let n0=errs.length;
+    // referência da inversão: o apontamento MAIS CEDO entre os níveis SUPERIORES a cada nível
+    const after=[];let mn=null;
+    for(let l=maxL;l>=1;l--){after[l]=mn;(M.lv[l-1]?M.lv[l-1].r:[]).forEach(r=>{const e=rec[r];if(e&&(!mn||e.fim<mn.t))mn={t:e.fim,l,r}})}
+    const add=(tipo,r,e,det)=>errs.push({key,mod,tipo,rec:r,fase:fase(r),op:e?e.op:'',data:e?e.fim:NaN,det});
+    M.lv.forEach((L,i)=>{
+      const lvl=i+1;if(lvl>maxL)return;const ref=after[lvl];
+      L.r.forEach(r=>{
+        const e=rec[r],F=FS[fase(r)]||(FS[fase(r)]={exp:0,rec:0,err:0});let st='OK',obs='';
+        if(e){F.exp++;F.rec++;S.exp++;S.rec++;ep++;rp++;const o=e.op?(OP[e.op]||(OP[e.op]={n:0,err:0})):null;if(o)o.n++;
+          if(ref&&e.fim>ref.t){st='SEQ';obs=`apontado depois do ${ref.r} do nível ${ref.l} (${fmt(ref.t)})`;F.err++;S.seq++;if(o)o.err++;add('Fora de sequência',r,e,obs)}}
+        else if(!L.opt){ep++;F.exp++;S.exp++;F.err++;S.nao++;st='NAO';obs='não apontado (nível '+lvl+')';add('Não apontado',r,null,obs)}
+        else st=L.opt?'OPC':'PEND';
+        rep.push({lvl,r,e,st,obs});
+        if(st==='OK')bump(e.fim,'ok',r,e.op);else if(st==='SEQ')bump(e.fim,'seq',r,e.op);else if(st==='NAO')bump(lastT,'nao',r);
+      });
+    });
+    if(ep){const m=MS[mod]||(MS[mod]={sum:0,n:0});m.sum+=rp/ep;m.n++;S.sumRate+=rp/ep}
+    const ne=errs.length-n0;if(ne)S.comErro++;
+    PC[key]={mod,rep,ne};
+  }
+}
+
+// ============================================================
+// 5. RENDERIZAÇÃO DOS INDICADORES E DAS TABELAS
+// ============================================================
+const pct=(a,b)=>b?a/b*100:0;
+function bars(en,color){if(!en.length)return '<span class="st">Sem dados</span>';return en.map(([k,w,t])=>`<div class="br"><span class="bl" title="${esc(k)}">${esc(k)}</span><div class="bt"><i style="width:${Math.min(100,w)}%;background:var(--${color})"></i></div><b>${t}</b></div>`).join('')}
+
+function renderInd(){
+  const el=$('t-resumo');
+  if(!rows.length||!models){el.innerHTML='<div class="empty"><b>Nenhum dado carregado</b>Importe o CSV de apontamentos e o modelo_recurso.txt.</div>';return}
+  const tp=FLT.tipo,A=AP.filter(a=>inS(FLT.lin,a.l)&&inS(FLT.ano,a.y)&&inS(FLT.mes,a.m)&&inS(FLT.fase,a.f)&&!(tp==='nao'&&a.tp==='seq')&&!(tp==='seq'&&a.tp==='nao'));
+  const P={},FX={},OX={},MX={},RC={};
+  A.forEach(a=>{
+    const p=P[a.key]||(P[a.key]={mod:a.mod,exp:0,rec:0,err:0});p.exp++;if(a.tp!=='nao')p.rec++;if(a.tp!=='ok')p.err++;
+    const f=FX[a.f]||(FX[a.f]={exp:0,rec:0,err:0});f.exp++;if(a.tp!=='nao')f.rec++;if(a.tp!=='ok')f.err++;
+    if(a.tp!=='ok')RC[a.r]=(RC[a.r]||0)+1;
+    if(a.op&&a.tp!=='nao'){const o=OX[a.op]||(OX[a.op]={n:0,err:0});o.n++;if(a.tp==='seq')o.err++}
+  });
+  const pk=Object.values(P);pk.forEach(p=>{const m=MX[p.mod]||(MX[p.mod]={sum:0,n:0});m.sum+=p.rec/p.exp;m.n++});
+  const nP=pk.length,wE=pk.filter(p=>p.err).length,taxa=nP?pk.reduce((a,p)=>a+p.rec/p.exp,0)/nP*100:0,pe=pct(wE,nP);
+  const nao=A.filter(a=>a.tp==='nao').length,seq=A.filter(a=>a.tp==='seq').length;
+  const fe=Object.entries(FX).filter(([,v])=>v.exp);
+  const menos=fe.map(([f,v])=>[f,pct(v.rec,v.exp)]).sort((a,b)=>a[1]-b[1]).slice(0,8).map(([f,p])=>[f,p,p.toFixed(0)+'%']);
+  const mais=fe.map(([f,v])=>[f,pct(v.err,v.exp),v.err]).filter(x=>x[2]).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([f,p,e])=>[f,p,`${p.toFixed(0)}% · ${e}`]);
+  const opn=Object.entries(OX).filter(([,v])=>v.n>=5&&v.err).map(([k,v])=>[k,pct(v.err,v.n),v]).sort((a,b)=>b[1]-a[1]).slice(0,8),opm=opn.length?opn[0][1]:1;
+  const opb=opn.map(([k,p,v])=>[k,p/opm*100,`${f1(p)}% · ${v.err}/${v.n}`]);
+  const mm=Object.entries(MX).filter(([,v])=>v.n>=3).map(([k,v])=>[k,v.sum/v.n*100,v]).sort((a,b)=>a[1]-b[1]).slice(0,8).map(([k,p,v])=>[k,p,`${p.toFixed(0)}% · ${v.n} pç`]);
+  const rn=Object.entries(RC).sort((a,b)=>b[1]-a[1]).slice(0,8),rx=rn.length?rn[0][1]:1,rb=rn.map(([k,v])=>[k,v/rx*100,v]);
+  const nl=v=>v.toLocaleString('pt-BR');
+  el.innerHTML=`<div class="pctx">INDICADORES · ${esc(printTitle)}</div><div class="hint" style="margin-bottom:10px">${esc(ctxText())}</div><div class="kpis">
+    <div class="kpi"><small>OF_PC analisadas</small><b>${nl(nP)}</b><i>${S.ign?S.ign+' ignoradas (modelo sem organograma)':'&nbsp;'}</i></div>
+    <div class="kpi"><small>OF_PC com erro</small><b class="${pe>30?'bad':'warn'}">${f1(pe)}%</b><i>${nl(wE)} peças</i></div>
+    <div class="kpi"><small>Apontam em média</small><b class="${taxa<90?'warn':'good'}">${f1(taxa)}%</b><i>do processo esperado, por OF_PC</i></div>
+    <div class="kpi"><small>Não apontados</small><b class="bad">${nl(nao)}</b><i>erro certo</i></div>
+    <div class="kpi"><small>Fora de sequência</small><b class="warn">${nl(seq)}</b><i>erro por data</i></div></div>
+    <div class="grid">
+    <div class="card"><h2>Fases que menos apontam</h2><div class="hint">% do esperado que foi apontado (menor = pior)</div>${bars(menos,'warn')}</div>
+    <div class="card"><h2>Modelos que menos apontam</h2><div class="hint">média por OF_PC do % do processo apontado · nº de peças (mín. 3 peças)</div>${bars(mm,'warn')}</div>
+    <div class="card"><h2>Fases que mais erram</h2><div class="hint">erros ÷ apontamentos esperados · nº de erros</div>${bars(mais,'bad')}</div>
+    <div class="card"><h2>Operadores que mais erram</h2><div class="hint">erros de sequência ÷ apontamentos do operador · erros/apontamentos (mín. 5 apontamentos)</div>${bars(opb,'bad')}</div>
+    <div class="card"><h2>Recursos que mais erram</h2><div class="hint">nº de erros</div>${bars(rb,'bad')}</div></div>`;
+}
+function render(){
+  renderInd();
+  const ch=Object.entries(PC).filter(([,v])=>v.ne).sort((a,b)=>b[1].ne-a[1].ne).slice(0,12);
+  $('chips').innerHTML=ch.map(([k,v])=>`<span class="chip" data-k="${esc(k)}">${esc(k)} · ${v.ne}</span>`).join('')||'<span class="st">—</span>';
+  chartInit();
+  const gm=new Map();if(models)for(const m in models){const g=models[m];if(!gm.has(g))gm.set(g,[]);gm.get(g).push(m)}
+  $('t-mods').innerHTML=!models?'<div class="card st">Importe o modelo_recurso.txt.</div>':
+   `<div class="st">${Object.keys(models).length} modelos em ${gm.size} grupos. Confira os níveis (1 → n), {opcional}:</div><br><div class="tw"><table><thead><tr><th>Modelos</th><th>Níveis</th></tr></thead><tbody>`+
+   [...gm].map(([g,ms])=>`<tr><td style="white-space:normal;min-width:160px"><b>${ms.map(esc).join(', ')}</b></td><td>${g.lv.map(l=>l.opt?`{${l.r.length} recursos}`:l.r.join('/')).join(' → ')}</td></tr>`).join('')+`</tbody></table></div>`;
+}
+
+// ============================================================
+// 8. FILTROS E PREPARAÇÃO DO GRÁFICO
+// ============================================================
+const MN = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+let yrInit=false;
+const byPt=(a,b)=>a.localeCompare(b,'pt-BR');
+/** Fases dependem das linhas escolhidas (nenhuma linha = todas). */
+function msPhases(){
+  const ph=[...new Set(Object.values(REL).filter(i=>FLT.lin.size===0||FLT.lin.has(i.linha)).map(i=>i.fase))].sort(byPt);
+  msRender('fase',ph.map(v=>({v,t:v})));
+}
+/** Monta os filtros (linhas da relação completa, anos dos dados) e redesenha as duas páginas. */
+function chartInit(){
+  const years=[...new Set(Object.keys(MO).map(k=>k.split('|')[1]))].sort((a,b)=>b-a);
+  if(!yrInit&&years.length){FLT.ano=new Set([years[0]]);yrInit=true}
+  msRender('lin',[...new Set(Object.values(REL).map(i=>i.linha))].sort(byPt).map(v=>({v,t:v})));
+  msRender('ano',years.map(v=>({v,t:v})));
+  msPhases();
+  msRender('mes',MN.map((t,i)=>({v:String(i),t})));
+  drawAll();
+}
+function drawAll(){drawChart();renderInd()}
+
+// ============================================================
+// 9. DESENHO DO GRÁFICO MENSAL
+// ============================================================
+let skipAnim=false,printTop=0,wasOpen=false;
+function drawChart(){
+  const el=$('chart');
+  if(!rows.length||!models){el.innerHTML='<div class="empty"><b>Nenhum dado carregado</b>Importe o CSV de apontamentos e o modelo_recurso.txt.</div>';$('kpisG').innerHTML='';$('phasePct').innerHTML='';renderDef();return}
+  const mset=FLT.mes,mon=mset.size>0,D=Array.from({length:12},()=>({t:0,e:0,n:0,s:0}));
+  for(const k in MO){const [l,y,m,f]=k.split('|');if(inS(FLT.lin,l)&&inS(FLT.ano,y)&&inS(FLT.fase,f)){const a=adj(MO[k]);D[+m].t+=a.t;D[+m].e+=a.e;D[+m].n+=a.n;D[+m].s+=a.s}}
+  const sm=k=>D.reduce((a,x,i)=>a+(!mon||mset.has(String(i))?x[k]:0),0),T=sm('t'),E=sm('e'),mx=Math.max(1,...D.map(x=>x.t));   // T/E seguem o mês clicado; as colunas mostram todos os meses
+  const Ta=D.reduce((a,x)=>a+x.t,0),Ea=D.reduce((a,x)=>a+x.e,0);
+  const p=Math.pow(10,Math.floor(Math.log10(mx))),nm=[1,2,2.5,5,10].map(f=>f*p).find(v=>v>=mx);
+  const W=780,H=340,L=48,R=46,B=30,Tp=26,cw=(W-L-R)/12,ch=H-B-Tp,n=v=>v.toLocaleString('pt-BR');
+  // Colunas usam toda a altura (eixo esquerdo). A linha de % de erros fica sobreposta, com eixo direito cujo zero está no centro.
+  const yb=Tp+ch,bh=ch,y=v=>yb-v/nm*bh;
+  const y0=Tp+ch*.5,lh=y0-Tp;
+  const pc=D.map(d=>d.t?d.e/d.t*100:null),pmax=Math.max(0,...pc.filter(v=>v!=null));
+  const pm=[4,10,20,30,40,60,80,100].find(c=>c>=pmax*1.15)||100,yp=v=>y0-v/pm*lh,avg=Ta?Ea/Ta*100:0;
+  // cor da linha por valor: verde em 0%, azul em 40%, vermelho em 80% (degradê contínuo)
+  const cv=v=>DS.css(v),hx=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+  const cG=hx(cv('--good')),cA=hx(cv('--ac')),cR=hx(cv('--bad')),mixc=(a,b,t)=>'rgb('+a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')+')';
+  const bwm=document.documentElement.classList.contains('pm-bw'),lc=v=>bwm?cv('--tx'):v<=40?mixc(cG,cA,v/40):mixc(cA,cR,Math.min(1,(v-40)/40));
+  let g=`<defs>
+    <linearGradient id="gg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--good)"/><stop offset="1" style="stop-color:var(--good);stop-opacity:.62"/></linearGradient>
+    <linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--bad)"/><stop offset="1" style="stop-color:var(--bad);stop-opacity:.72"/></linearGradient>
+    <filter id="sh" x="-30%" y="-10%" width="160%" height="130%"><feDropShadow dx="0" dy="4" stdDeviation="4" style="flood-color:var(--bg)" flood-opacity=".38"/></filter>
+    <pattern id="hat" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" style="stroke:var(--bg1);stroke-width:1.5;stroke-opacity:.9"/></pattern>
+    <linearGradient id="lg" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1="${y0}" y2="${yp(80)}"><stop offset="0" stop-color="${lc(0)}"/><stop offset=".5" stop-color="${lc(40)}"/><stop offset="1" stop-color="${lc(80)}"/></linearGradient></defs>`;
+  // grade e eixo esquerdo (apontamentos)
+  g+=`<text x="3" y="${Tp-12}" style="fill:var(--faint);font-size:10px">apontamentos</text>`;
+  for(let i=0;i<=4;i++){const v=nm*i/4;g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke-dasharray="${i?'3 5':'0'}" style="stroke:var(--bd)"/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" style="fill:var(--faint);font-size:11px">${n(Math.round(v))}</text>`}
+  // grade e eixo direito (% de erros)
+  g+=`<text x="${W}" y="${Tp-12}" text-anchor="end" style="fill:var(--ac);font-size:10px">% de erros</text>`;
+  [0,pm/2,pm].forEach(v=>{g+=`<line x1="${W-R}" x2="${W-R+4}" y1="${yp(v)}" y2="${yp(v)}" style="stroke:${lc(v)};opacity:.7"/><text x="${W-R+8}" y="${yp(v)+4}" style="fill:${lc(v)};font-size:11px">${v%1?f1(v):v}%</text>`});
+  g+=`<line x1="${L}" x2="${W-R}" y1="${y0}" y2="${y0}" stroke-dasharray="1 4" style="stroke:var(--ac);opacity:.5"/>`;
+  // posição do rótulo de total: sobe acima do marcador da linha quando os dois colidiriam
+  const tl=D.map((d,i)=>{if(!d.t)return 0;const t0=y(d.t)-7;if(pc[i]==null)return t0;const cy=yp(pc[i]);return(cy>=y(d.t)-26&&cy<=y(d.t)+2&&cy-27>=10)?cy-27:t0});
+  D.forEach((d,i)=>{
+    const x=L+i*cw+cw*.16,w=cw*.68,c=d.t-d.e,hc=c/nm*bh,he=d.e/nm*bh,ht=d.t/nm*bh,cx=x+w/2,r=Math.min(6,w/2),sl=mset.has(String(i)),dm=mon&&!sl?.35:1;
+    g+=`<g class="cg${sl?' sel':''}"${d.t?` data-m="${i}"`:''}><title>${MN[i]}: total ${d.t} · certos ${c} · errados ${d.e} (${f1((d.t?d.e/d.t*100:0))}%)</title>
+      <rect class="hv" x="${L+i*cw+2}" y="${Tp-6}" width="${cw-4}" height="${ch+6}" rx="8" style="fill:var(--ac)"/><g style="opacity:${dm}">`;
+    if(d.t){
+      g+=`<clipPath id="c${i}"><rect x="${x}" y="${y(d.t)}" width="${w}" height="${ht}" rx="${r}"/></clipPath>
+        <rect x="${x}" y="${y(d.t)}" width="${w}" height="${ht}" rx="${r}" filter="url(#sh)" style="fill:var(--good)"/>
+        <g class="col" clip-path="url(#c${i})"><rect x="${x}" y="${y(c)}" width="${w}" height="${hc}" fill="url(#gg)"/><rect x="${x}" y="${y(d.t)}" width="${w}" height="${he}" fill="url(#gb)"/><rect class="hatch" x="${x}" y="${y(d.t)}" width="${w}" height="${he}" fill="url(#hat)"/>
+        ${he>0&&hc>0?`<line x1="${x}" x2="${x+w}" y1="${y(c)}" y2="${y(c)}" style="stroke:var(--bg1)" stroke-opacity=".5"/>`:''}</g>`;
+      if(he>15)g+=`<text x="${cx}" y="${y(d.t)+he/2+4}" text-anchor="middle" class="n" style="font-size:11px">${n(d.e)}</text>`;
+      if(hc>15)g+=`<text x="${cx}" y="${y(c)+hc/2+4}" text-anchor="middle" class="n nc" style="font-size:11px">${n(c)}</text>`;
+      g+=`<text x="${cx}" y="${tl[i]}" text-anchor="middle" style="fill:var(--tx);font-size:11px;font-weight:700">${n(d.t)}</text>`}
+    g+=`</g>${sl&&d.t?`<rect x="${x-1}" y="${y(d.t)-1}" width="${w+2}" height="${ht+2}" rx="${r+1}" fill="none" style="stroke:var(--tx);stroke-opacity:.85;stroke-width:1.5"/>`:''}<text x="${cx}" y="${H-10}" text-anchor="middle" style="fill:var(--${sl?'tx':'dim'});font-size:12px;font-weight:${sl?700:400}">${MN[i]}</text></g>`});
+  // linha suave (interpolação monotônica, sem ultrapassar os pontos): % de erros = errados ÷ total do mês
+  const curve=P=>{const k=P.length;if(k<2)return '';const dx=[],dy=[],m=[],f=v=>v.toFixed(1);
+    for(let i=0;i<k-1;i++){dx[i]=P[i+1][0]-P[i][0];dy[i]=(P[i+1][1]-P[i][1])/dx[i]}
+    m[0]=dy[0];m[k-1]=dy[k-2];for(let i=1;i<k-1;i++)m[i]=dy[i-1]*dy[i]<=0?0:(dy[i-1]+dy[i])/2;
+    for(let i=0;i<k-1;i++){if(dy[i]===0){m[i]=m[i+1]=0}else{const a=m[i]/dy[i],b=m[i+1]/dy[i],h=a*a+b*b;if(h>9){const t=3/Math.sqrt(h);m[i]=t*a*dy[i];m[i+1]=t*b*dy[i]}}}
+    let d=`M${f(P[0][0])} ${f(P[0][1])}`;
+    for(let i=0;i<k-1;i++){const h=dx[i]/3;d+=` C${f(P[i][0]+h)} ${f(P[i][1]+m[i]*h)} ${f(P[i+1][0]-h)} ${f(P[i+1][1]-m[i+1]*h)} ${f(P[i+1][0])} ${f(P[i+1][1])}`}
+    return d};
+  const segs=[];let cur=[],pts='';
+  pc.forEach((v,i)=>{
+    if(v==null){if(cur.length)segs.push(cur);cur=[];return}
+    const cx=L+i*cw+cw/2,cy=yp(v),tx=v.toFixed(0)+'%',bw=tx.length*5.6+8,ph=13,col=lc(v),px=cx+3-bw,
+      he=D[i].e/nm*bh,bx=[D[i].t?[tl[i]-12,tl[i]+3]:[-9,-9],he>15?[y(D[i].t)+he/2-9,y(D[i].t)+he/2+4]:[-9,-9]],   // total da barra e número de errados
+      ov=t=>bx.reduce((a,b)=>a+Math.max(0,Math.min(t+ph,b[1])-Math.max(t,b[0])),0),ca=cy-ph-6,cb=cy+7,ly=ca<2?cb:(ov(ca)<=ov(cb)?ca:cb),
+      on=mset.has(String(i)),o=mon&&!on?.45:1;
+    cur.push([cx,cy]);
+    pts+=`<g style="opacity:${o}"><title>${MN[i]}: ${f1(v)}% de erro (${n(D[i].e)} de ${n(D[i].t)})</title><rect x="${px}" y="${ly}" width="${bw}" height="${ph}" rx="${ph/2}" style="fill:var(--bg1);fill-opacity:.88;stroke:${col};stroke-opacity:.6"/><text x="${px+bw/2}" y="${ly+ph-3.6}" text-anchor="middle" style="fill:${col};font-size:9px;font-weight:700">${tx}</text><circle cx="${cx}" cy="${cy}" r="${on?4:3}" style="fill:${col};stroke:var(--bg1);stroke-width:1.2"/></g>`});
+  if(cur.length)segs.push(cur);
+  if(Ta)g+=`<line x1="${L}" x2="${W-R}" y1="${yp(avg)}" y2="${yp(avg)}" stroke-dasharray="2 4" style="stroke:${lc(avg)};opacity:.6"/><text x="${W-R-4}" y="${yp(avg)-4}" text-anchor="end" style="fill:${lc(avg)};font-size:10px;opacity:.9">média ${f1(avg)}%</text>`;
+  const path=segs.map(curve).join(' ');
+  if(path)g+=`<path d="${path}" fill="none" style="stroke:var(--bg);stroke-opacity:.55;stroke-width:3.5;stroke-linecap:round"/><path d="${path}" fill="none" stroke="url(#lg)" style="stroke-width:1.5;stroke-linecap:round"/>`;
+  g+=pts;
+  const ctx=esc(ctxText());
+  $('kpisG').innerHTML=`<div class="kpi ac"><small>Apontamentos esperados</small><b>${n(T)}</b><i>${ctx}</i></div><div class="kpi good"><small>Certos</small><b>${n(T-E)}</b><i>${f1(T?(T-E)/T*100:0)}% do total</i></div><div class="kpi bad"><small>Errados</small><b>${n(E)}</b><i>${FLT.tipo==='nao'?'somente não apontados':FLT.tipo==='seq'?'somente fora de sequência':`${n(sm('n'))} não apontados · ${n(sm('s'))} fora de sequência`}</i></div><div class="kpi warn"><small>% de erros</small><b>${f1(T?E/T*100:0)}%</b><i>média do ano ${f1(avg)}%</i></div>`;
+  el.innerHTML=`<div class="ch"><span class="ttl">Apontamentos por mês e % de erros</span></div><div class="lg"><span><i style="background:var(--good)"></i>certos</span><span><i style="background:var(--bad)"></i>errados</span><span><i style="width:22px;height:3px;vertical-align:2px;background:linear-gradient(90deg,var(--good),var(--ac),var(--bad))"></i>% de erros (eixo direito: verde 0% · azul 40% · vermelho 80%)</span></div><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Colunas de apontamentos certos e errados por mês, com linha de percentual de erros" class="${skipAnim?'na':''}" style="width:100%;height:auto;display:block">${g}</svg>`;
+  skipAnim=false;
+  renderDef(T,E,sm('n'),sm('s'));
+  drawPhasePct();
+}
+
+// ============================================================
+// 9B. DEFINIÇÃO DOS ERROS E % DE ERROS POR FASE
+// ============================================================
+/** Seção recolhível que explica o que é erro e quantifica cada tipo (segue os filtros do gráfico). */
+function renderDef(T,E,N,Q){
+  const has=T!=null,n=v=>v.toLocaleString('pt-BR'),pc=T?E/T*100:0;
+  $('defSum').innerHTML=`<b>O que é considerado erro?</b> <span class="st">${has?`· ${n(E)} erros no filtro atual (${f1(pc)}% de ${n(T)} apontamentos) — clique para ver os critérios`:'· clique para ver os critérios'}</span>`;
+  const q1=$('oQtd').value==='1',cls=t=>FLT.tipo===t?' sel':FLT.tipo?' dim':'';
+  $('defBody').innerHTML=`<div class="grid" style="margin-top:4px">
+    <div class="callout bad${cls('nao')}" data-tp="nao" role="button" tabindex="0" title="Clique para filtrar por este tipo"><h3>1. Não apontado <span class="tag bad">${has?n(N):'—'}</span></h3><p>Recurso obrigatório do organograma do modelo (fora de { }) que está em um nível igual ou anterior ao último nível apontado da peça, mas não tem apontamento. Não tem data nem operador; é contado no mês do último apontamento da peça.</p></div>
+    <div class="callout${cls('seq')}" data-tp="seq" role="button" tabindex="0" title="Clique para filtrar por este tipo"><h3>2. Fora de sequência <span class="tag ac">${has?n(Q):'—'}</span></h3><p>Etapa apontada fora de ordem: a peça recebeu o apontamento de uma etapa depois de já existir apontamento de uma etapa de nível superior. O erro é atribuído à etapa de nível inferior, apontada tarde — nunca às etapas superiores em que a inversão foi detectada. Recursos do mesmo nível podem ser apontados em qualquer ordem. É contado no mês da data do apontamento errado.</p></div></div>
+    ${has&&(N+Q)?`<div class="bt" style="margin-top:12px;display:flex;gap:2px" title="Não apontado ${n(N)} · Fora de sequência ${n(Q)}"><i class="c1" style="width:${N/(N+Q)*100}%"></i><i class="c2" style="width:${Q/(N+Q)*100}%"></i></div><div class="hint" style="margin-top:4px">Composição dos erros: <span class="sq c1"></span>${(N/(N+Q)*100).toFixed(0)}% não apontado <span class="sq c2"></span>${(Q/(N+Q)*100).toFixed(0)}% fora de sequência</div>`:''}
+    <div class="dn"><b>Contagem:</b> Total = apontamentos esperados (apontados + não apontados). Errados = tipo 1 + tipo 2. Certos = total − errados. Os valores seguem os filtros de Linha, Ano, Fase e Mês. Clique em um tipo de erro acima para filtrar (clique de novo para limpar).</div>
+    <div class="dn"><b>Não são considerados erro:</b> recursos opcionais ({ }) sem apontamento; recursos fora do organograma do modelo; peças de modelos sem organograma; recursos ainda não alcançados pela peça (níveis posteriores ao último apontamento)${q1?'; apontamentos com Qtd.Prod = 0 (não concluem a etapa)':''}.</div>`;
+}
+
+/** Barras de % de erros por fase (respeita Linha e Ano; o filtro de Fase só destaca a fase escolhida). */
+function drawPhasePct(){
+  const el=$('phasePct');
+  if(!rows.length||!models){el.innerHTML='';return}
+  const F={},n=v=>v.toLocaleString('pt-BR');
+  for(const k in MO){const [l,y,m,f]=k.split('|');if(inS(FLT.lin,l)&&inS(FLT.ano,y)&&inS(FLT.mes,m)){const a=adj(MO[k]),o=F[f]||(F[f]={t:0,e:0,n:0,s:0});o.t+=a.t;o.e+=a.e;o.n+=a.n;o.s+=a.s}}
+  const L=Object.entries(F).filter(([,v])=>v.t).map(([f,v])=>({f,...v,p:v.e/v.t*100})).sort((a,b)=>b.p-a.p||b.e-a.e);
+  const T=L.reduce((a,x)=>a+x.t,0),E=L.reduce((a,x)=>a+x.e,0),avg=T?E/T*100:0,mx=Math.max(1,...L.map(x=>x.p));
+  const col=p=>p>avg*1.5?'bad':p>avg?'warn':'good';
+  const lg=(c,t)=>`<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--${c});margin:0 4px 0 12px"></span>${t}`;
+  el.innerHTML=`<div class="ch"><span class="ttl">% de erros por fase${printTop&&L.length>printTop?` (top ${printTop} de ${L.length})`:''}</span></div><div class="hint">erros ÷ apontamentos esperados da fase · ${esc(ctxText(['lin','ano','mes']))} · linha tracejada = média (${f1(avg)}%) · clique numa fase para filtrar o gráfico</div>
+    <div class="pl">${L.slice(0,printTop||L.length).map(x=>`<div class="pr${FLT.fase.has(x.f)?' sel':''}" data-f="${esc(x.f)}" title="${esc(x.f)}: ${f1(x.p)}% de erro — ${n(x.e)} de ${n(x.t)} apontamentos (não apontado ${n(x.n)} · fora de sequência ${n(x.s)})"><span class="bl" style="color:var(--tx)">${esc(x.f)}</span><div class="pt"><i style="width:${x.p/mx*100}%;background:var(--${col(x.p)})"></i><u style="left:${avg/mx*100}%"></u></div><b>${f1(x.p)}%</b><span class="st">${n(x.e)}/${n(x.t)}</span></div>`).join('')||'<span class="st">Sem dados</span>'}</div>
+    <div class="st" style="margin-top:8px">${lg('good','até a média')}${lg('warn','acima da média')}${lg('bad','mais de 1,5× a média')}</div>`;
+}
+
+// ============================================================
+// 10. CONSULTA DETALHADA DE UMA OF_PC
+// ============================================================
+function showPeca(k){
+  k=k.trim();const p=PC[k];
+  if(!p){$('rep').innerHTML=k?'<span class="st">OF_PC não encontrada (ou ignorada por modelo sem organograma).</span>':'';return}
+  const T={OK:['OK','good'],SEQ:['ERRO · sequência','bad'],NAO:['ERRO · não apontado','bad'],OPC:['opcional','st'],PEND:['pendente','st']};
+  $('rep').innerHTML=`<h2>${esc(k)} [${esc(p.mod)}]</h2><br><div class="tw"><table><thead><tr><th>Nível</th><th>Recurso</th><th>Descrição</th><th>Data</th><th>Operador</th><th>Status</th><th>Obs.</th></tr></thead><tbody>`+
+   p.rep.map(x=>`<tr><td>${x.lvl}</td><td>${esc(x.r)}</td><td>${esc(rel(x.r).desc||DESC[x.r]||'')}</td><td>${x.e?fmt(x.e.fim):'SEM DATA'}</td><td>${x.e?esc(x.e.op):'—'}</td><td class="${T[x.st][1]}">${T[x.st][0]}</td><td>${esc(x.obs)}</td></tr>`).join('')+`</tbody></table></div>`;
+}
+
+// ============================================================
+// 11. EXECUÇÃO, EVENTOS E NAVEGAÇÃO ENTRE ABAS
+// ============================================================
+function run(){analyze();render();
+  $('status').innerHTML=`CSV: <b>${rows.length?rows.length.toLocaleString('pt-BR')+' linhas':'—'}</b> · Modelos: <b>${models?Object.keys(models).length:'—'}</b>`+(rows.length&&models?' · Análise concluída':'')}
+function fail(m){$('status').innerHTML='<span class="err">'+esc(m)+'</span>'}
+
+$('bCsv').onclick=()=>$('fCsv').click();$('bMod').onclick=()=>$('fMod').click();
+$('fCsv').onchange=async e=>{const f=e.target.files[0];if(!f)return;$('status').textContent='Lendo CSV...';
+  try{rows=parseCSV(await readF(f));run()}catch(x){fail(x.message)}e.target.value=''};
+$('fMod').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  try{models=parseModels(await readF(f));if(!Object.keys(models).length)throw new Error('Nenhum modelo reconhecido no arquivo');run()}catch(x){fail(x.message)}e.target.value=''};
+$('filtros').addEventListener('change',e=>{
+  const ms=e.target.closest('.ms');
+  if(ms){const k=ms.id.slice(3),st=FLT[k];
+    if(e.target.hasAttribute('data-all'))st.clear();else e.target.checked?st.add(e.target.value):st.delete(e.target.value);
+    if(k==='lin'){msRender('lin',MSI.lin);msPhases()}else msRender(k,MSI[k]);
+    drawAll();
+  }else if(e.target.id==='fTipo'){FLT.tipo=e.target.value;drawAll()}
+});
+document.addEventListener('click',e=>{const b=e.target.closest('.ms-b');
+  document.querySelectorAll('.ms-p').forEach(p=>{if(b&&p.parentElement===b.parentElement)p.hidden=!p.hidden;else if(!p.contains(e.target))p.hidden=true})});
+const setTipo=t=>{FLT.tipo=FLT.tipo===t?'':t;$('fTipo').value=FLT.tipo;drawAll()};
+$('defBody').addEventListener('click',e=>{const c=e.target.closest('[data-tp]');if(c)setTipo(c.dataset.tp)});
+$('defBody').addEventListener('keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;const c=e.target.closest('[data-tp]');if(c){e.preventDefault();setTipo(c.dataset.tp)}});
+// clique em coluna/fase: seleciona só aquele item (clique de novo limpa); Shift/Ctrl soma ou remove da seleção
+const pick=(k,v,e)=>{const st=FLT[k];if(e.shiftKey||e.ctrlKey||e.metaKey)st.has(v)?st.delete(v):st.add(v);else if(st.size===1&&st.has(v))st.clear();else{st.clear();st.add(v)}msRender(k,MSI[k]);skipAnim=true;drawAll()};
+$('bPrint').onclick=()=>{$('ovPrint').hidden=false};
+$('pCancel').onclick=()=>{$('ovPrint').hidden=true};
+$('ovPrint').onclick=e=>{if(e.target===$('ovPrint'))$('ovPrint').hidden=true};
+$('pGo').onclick=()=>{
+  const bw=$('pMode').value==='bw';
+  $('ovPrint').hidden=true;
+  document.documentElement.classList.add(bw?'pm-bw':'pm-color');
+  document.body.classList.toggle('p-nodef',!$('pDef').checked);
+  document.body.classList.toggle('p-ind',$('pInd').checked);
+  printTop=+$('pTop').value;wasOpen=$('defErros').open;$('defErros').open=true;
+  printTitle=`${ctxText()} · Considerar: ${$('oQtd').selectedOptions[0].text} · Versão ${bw?'preto e branco':'colorida'} · Gerado em ${new Date().toLocaleString('pt-BR')}`;
+  $('printCtx').textContent=printTitle;renderInd();
+  setTimeout(()=>window.print(),60);
+};
+// o tema claro é aplicado pelo ds.js em beforeprint; aqui só redesenha o gráfico com as cores desse momento
+addEventListener('beforeprint',()=>{if(rows.length&&models){skipAnim=true;drawChart()}});
+addEventListener('afterprint',()=>{document.documentElement.classList.remove('pm-bw','pm-color');document.body.classList.remove('p-nodef','p-ind');printTop=0;$('defErros').open=wasOpen;if(rows.length&&models){skipAnim=true;drawChart()}});
+document.addEventListener('ds:theme',()=>{if(rows.length&&models)drawChart()});
+$('chart').onclick=e=>{const g=e.target.closest('.cg[data-m]');if(g)pick('mes',g.dataset.m,e)};
+$('phasePct').onclick=e=>{const r=e.target.closest('[data-f]');if(r&&(MSI.fase||[]).some(i=>i.v===r.dataset.f))pick('fase',r.dataset.f,e)};
+$('oQtd').onchange=()=>{if(rows.length&&models)run();else renderDef()};
+$('qBtn').onclick=()=>showPeca($('qBusca').value);$('qBusca').onkeydown=e=>{if(e.key==='Enter')showPeca(e.target.value)};
+$('chips').onclick=e=>{const k=e.target.dataset.k;if(k){$('qBusca').value=k;showPeca(k)}};
+$('tabs').onclick=e=>{const t=e.target.dataset.t;if(!t)return;
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b===e.target));
+  ['geral','resumo','peca','mods'].forEach(k=>$('t-'+k).classList.toggle('hide',k!==t));$('filtros').classList.toggle('hide',t!=='geral'&&t!=='resumo')};
+render();
+</script></body></html>

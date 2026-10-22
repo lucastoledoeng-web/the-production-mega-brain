@@ -1,0 +1,189 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WIP</title>
+<style>
+:root{color-scheme:dark;--bg:#0a0d12;--bg1:#10151c;--bg2:#151b23;--bd:#232b36;--tx:#e7edf3;--dim:#9aa7b5;--faint:#5c6b7a;--ac:#2f9bf0;--good:#5fae8a;--warn:#d9a441;--wf:#d9a441;--bad:#e0564f;--gray:#4a5767;--sh:0 1px 2px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.22);--r:8px;--rs:6px}
+:root[data-theme=light]{color-scheme:light;--bg:#e9e9e6;--bg1:#f8f8f6;--bg2:#efefec;--bd:#d2d2cd;--tx:#17202b;--dim:#505a66;--faint:#7b838d;--ac:#0057ad;--good:#1f7a52;--warn:#f09e07;--wf:#d87212;--bad:#c0352e;--gray:#80807f;--sh:0 1px 2px rgba(23,32,43,.08),0 6px 18px rgba(23,32,43,.07)}
+html.pm-bw[data-theme]{--good:hsl(0 0% 80%);--bad:hsl(0 0% 12%);--warn:hsl(0 0% 50%);--wf:hsl(0 0% 50%);--ac:hsl(0 0% 28%);--dim:hsl(0 0% 25%);--bd:hsl(0 0% 62%);--bg2:hsl(0 0% 93%);--gray:hsl(0 0% 62%)}
+*{box-sizing:border-box}body{margin:0;padding:24px;background:var(--bg);color:var(--tx);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-variant-numeric:tabular-nums}
+h1{font-size:20px;margin:0}h3{font-size:13px;margin:0 0 8px;color:var(--dim);font-weight:600}.hide{display:none!important}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}
+.app-h{display:flex;gap:12px 16px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:16px}.sub{color:var(--dim);margin:4px 0 0}.act{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.bar{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px}.bar label{display:flex;flex-direction:column;gap:4px;color:var(--dim);font-size:12px}.bar label.in{flex-direction:row;align-items:center;gap:6px;font-size:13px}
+select,input[type=date]{background:var(--bg2);color:var(--tx);border:1px solid var(--bd);border-radius:var(--rs);padding:7px 10px;font:inherit}input[type=checkbox]{accent-color:var(--ac);vertical-align:middle}
+button{font:inherit;border-radius:var(--rs);cursor:pointer}.btn{background:var(--ac);color:#fff;border:0;padding:8px 14px;font-weight:600}.btn:hover{filter:brightness(1.1)}.btn2{background:var(--bg2);color:var(--tx);border:1px solid var(--bd);padding:7px 14px}.btn2:hover{border-color:var(--ac)}
+.sw{display:inline-flex;border:1px solid var(--bd);border-radius:var(--rs);overflow:hidden;background:var(--bg2)}.sw button{background:none;border:0;color:var(--dim);padding:6px 12px}.sw button.on{background:var(--ac);color:#fff}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--bd);margin:14px 0 16px}.tabs button{background:none;border:0;color:var(--dim);padding:9px 16px;border-bottom:2px solid transparent;border-radius:0}.tabs button.on{color:var(--tx);border-color:var(--ac)}
+.pn{display:none}.pn.on{display:block}.st{color:var(--dim);font-size:13px;margin-bottom:12px}
+.kpis{display:flex;gap:10px;margin-bottom:16px;overflow-x:auto}.kpi{flex:1 0 118px;background:var(--bg1);border:1px solid var(--bd);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh)}.kpi span{display:block;color:var(--dim);font-size:11px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}.kpi b{display:block;font-size:24px;line-height:1.2}
+.box{background:var(--bg1);border:1px solid var(--bd);border-radius:var(--r);padding:14px;box-shadow:var(--sh);margin-bottom:12px;overflow-x:auto}#chart{background:linear-gradient(180deg,var(--bg1),var(--bg2))}
+table{border-collapse:collapse;width:100%}th,td{padding:6px 10px;border-bottom:1px solid var(--bd);text-align:right}th:first-child,td:first-child{text-align:left}th{color:var(--dim);font-weight:600;background:var(--bg2)}
+svg text{fill:var(--dim);font-size:11px}svg .n{fill:#fff;font-weight:600;font-size:11px}.pm-bw svg .n:not(.nb){fill:var(--tx)}svg .lb{fill:var(--tx);font-weight:700}.hatch{display:none}.pm-bw .hatch{display:block}
+.lg{display:flex;flex-wrap:wrap;gap:14px;color:var(--dim);font-size:12px;margin-top:6px}.lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}.pm-bw .lg i.w{background:repeating-linear-gradient(45deg,hsl(0 0% 36%) 0 3px,hsl(0 0% 92%) 3px 6px)}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:100}.ov[hidden]{display:none}.ov .box{max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+@media print{@page{size:A4 portrait;margin:8mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.np{display:none!important}body{padding:0;background:none}.box,.kpi{box-shadow:none;break-inside:avoid}#chart{background:none}.pn{display:none!important}#pr{display:block!important}.kpis{overflow:visible;gap:6px}.kpi{flex:1 1 0;min-width:0;padding:6px 8px}.kpi span{font-size:8px;white-space:normal}.kpi b{font-size:16px}}
+</style></head><body>
+<header class="app-h"><div><h1 id="ttl">Work in Process</h1><div class="sub" id="sub">Importe os CSVs, escolha as datas e clique em Carregar.</div></div>
+<div class="act np"><button class="btn" id="bA">Importar apontamentos (CSV)</button><button class="btn" id="bF">Importar faturadas (CSV)</button>
+<input type="file" id="fa" accept=".csv,.txt" class="hide"><input type="file" id="ff" accept=".csv,.txt" class="hide">
+<div class="sw" role="group" aria-label="Tema"><button data-ts="auto">Auto</button><button data-ts="light">Claro</button><button data-ts="dark">Escuro</button></div>
+<button class="btn2" id="bP">Imprimir / PDF</button></div></header>
+<div class="bar np"><label>Fábrica<select id="fab"><option value="AT">Alta Tensão</option><option value="MT">Média Tensão</option></select></label>
+<label>De (06:00)<input type="date" id="d0"></label><label>Até (06:00)<input type="date" id="d1"></label><label>Data de corte (06:00)<input type="date" id="dc"></label>
+<button class="btn" id="go">Carregar</button><label class="in"><input type="checkbox" id="uf">Remover do WIP peças faturadas até De</label></div>
+<div class="st np" id="st"></div>
+<div class="tabs np"><button class="on" data-t="r">Relatório</button><button data-t="l">Lista detalhada</button><button data-t="a">Análise de dados</button></div>
+<div class="pn on" id="pr"></div><div class="pn" id="pl"></div><div class="pn" id="pa"></div>
+<div class="ov np" id="ov" hidden><div class="box"><h3>Imprimir / gerar PDF</h3><label style="display:flex;flex-direction:column;gap:4px;color:var(--dim);font-size:12px">Versão<select id="pm"><option value="color">Colorida</option><option value="bw">Preto e branco</option></select></label>
+<div class="lg">Para PDF, escolha "Salvar como PDF" na janela de impressão. Sai a aba Relatório, em A4 retrato.</div>
+<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn2" id="pC">Cancelar</button><button class="btn" id="pG">Imprimir / PDF</button></div></div></div>
+<script>
+/* ================= CONFIGURAÇÃO (edite aqui) ================= */
+const CONFIG={
+ // [nome da fase, fábrica, [recursos]] — a ordem define o fluxo (AT) e a ordem das barras
+ fases:[['BP','AT',[1101]],['RB','AT',[1201,1301,1401,1501]],['IS','AT',[801,802,901,1001]],
+ ['MN','AT',[1601,1701,1710,1720,1721,1722,1723,1724]],['FD','AT',[1820,1830,1840,1870]],
+ ['MP','AT',[1905,1900,1910,1915,2001,2002,2004,2006,2010,2016,2101,2102,2103,2104,2105]],['TO','AT',[3001,3010,3100]],
+ ['AC','AT',[3200,3241,3242,3243,3244,3245,3250,3260,3262,3263,3264,3265,3266,3267]],['AF','AT',[3301,3302,3303,3400,3450]],
+ ['AF MT','MT',[100501]],['BS TC MT','MT',[500401,500402,500403,500404]],['TS TC MT','MT',[500450]],['FS TC MT','MT',[500601]],
+ ['BP TC MT','MT',[500801]],['AG TC MT','MT',[500901]],['FP TC MT','MT',[501101]],['BS TP MT','MT',[501301]],['BP TP MT','MT',[501401]],
+ ['MN TP MT','MT',[501501]],['CO TP MT','MT',[501601]],['AP TP MT','MT',[501701]],['SO TP MT','MT',[501801]],['MO MT','MT',[502101]],['EM MT','MT',[503401]]],
+ saida:{AT:[3500],MT:[]},              // recursos de expedição (peça sai do WIP)
+ janelaDias:15,                        // retrato = último apontamento até N dias antes da data (null = só data de corte)
+ regraRetorno:{AT:false,MT:false},      // true = apontamento em fase anterior é ignorado
+ totalBalancoExclui:['FD'],            // fases fora da média do balanço total
+ faixas:[0.45,0.55,0.9], rotulos:['BAIXO','NORMAL','ALTO','MUITO ALTO'],
+ yMax:10,                              // eixo Y do gráfico de calor (dias)
+ zonas:[0.15,0.3,0.45,0.6], zonaCores:['#3a7ca5','#5fae8a','#d9a441','#d9702f','#e0564f'],
+ score:(x,y,Y)=>0.6*Math.min(y/Y,1)+0.4*(x<=50?0.35*(50-x)/50:0.9*(x-50)/50), // x=balanço%, y=dias
+ maxLinhasLista:3000
+};
+/* ============================================================== */
+const $=id=>document.getElementById(id),FASES=CONFIG.fases.map((f,i)=>({n:f[0],side:f[1],g:i,res:f[2]})),EXP=FASES.length,REC=new Map(),ord={AT:0,MT:0};
+FASES.forEach(f=>{f.rk=ord[f.side]++;f.res.forEach(r=>REC.set(r,{g:f.g,rk:f.rk,side:f.side}))});
+for(const s in CONFIG.saida)CONFIG.saida[s].forEach(r=>REC.set(r,{g:EXP,rk:1e6,side:s}));
+const NM=g=>g<0?'—':g==EXP?'Expedição':FASES[g].n,pct=v=>v==null?'—':(v*100).toFixed(1).replace('.',',')+'%',nf=v=>v.toLocaleString('pt-BR');
+let S=null;
+function parseDT(d,h){const a=(d||'').trim().split('/'),b=(h||'').trim().split(':');if(a.length<3||b.length<2)return null;const t=Date.UTC(+a[2],+a[1]-1,+a[0],+b[0],+b[1],+(b[2]||0))/6e4;return isNaN(t)?null:t}
+const dT=id=>{const v=$(id).value;if(!v)return null;const a=v.split('-');return Date.UTC(+a[0],+a[1]-1,+a[2],6,0)/6e4};
+async function ler(file,fn){const rd=file.stream().getReader();let dec=null,buf='',n=0;
+ for(;;){const {done,value}=await rd.read();if(done)break;n+=value.length;
+  if(!dec){let e='utf-8';try{new TextDecoder('utf-8',{fatal:true}).decode(value,{stream:true})}catch(_){e='windows-1252'}dec=new TextDecoder(e)}
+  buf+=dec.decode(value,{stream:true});const i=buf.lastIndexOf('\n');if(i<0)continue;
+  const ls=buf.slice(0,i).split('\n');buf=buf.slice(i+1);for(const l of ls)fn(l.replace('\r',''));
+  $('st').textContent='Lendo '+file.name+': '+Math.round(n/file.size*100)+'%'}
+ if(buf)fn(buf.replace('\r',''))}
+async function carregar(){
+ const fa=$('fa').files[0],fc=dT('dc');if(!fa||fc==null){$('st').textContent='Selecione o CSV de apontamentos e a data de corte.';return}
+ const st={lidas:0,linhasI:0,tipoInv:0,qtdInv:0,incompleta:0,antesCorte:0,opDiv:0,usadas:0,fatLidas:0},nao=new Map(),pecas=new Map(),fat=new Map();let I=null;
+ await ler(fa,l=>{if(!I){if(l.includes('Recurso')){const c=l.split(';').map(x=>x.trim());I={tipo:c.indexOf('Tipo'),OP:c.indexOf('OP'),op:c.indexOf('op'),rec:c.indexOf('Recurso'),des:c.indexOf('Descricao'),fim:c.indexOf('DT Fim'),hf:c.indexOf('HR Fim'),pc:c.findIndex(x=>x.startsWith('Num')),q:c.findIndex(x=>x.startsWith('Qtd')),n:c.length}}return}
+  const s=l.split(';');if(s.length<I.n-2)return;st.lidas++;const tp=s[I.tipo].trim();
+  if(tp=='I'){st.linhasI++;return}if(tp!='P'){st.tipoInv++;return}
+  const q=s[I.q].trim();if(q!='0'&&q!='1'){st.qtdInv++;return}
+  const t=parseDT(s[I.fim],s[I.hf]),r=parseInt(s[I.rec],10),of=s[I.op].trim(),pc=parseInt(s[I.pc].replace(/\D/g,''),10);
+  if(t==null||isNaN(r)||!of||isNaN(pc)){st.incompleta++;return}if(t<fc){st.antesCorte++;return}
+  const m=REC.get(r);if(!m){const o=nao.get(r)||{d:s[I.des].trim(),c:0};o.c++;nao.set(r,o);return}
+  if(s[I.OP].trim().slice(0,6)!==of)st.opDiv++;st.usadas++;
+  const k=of+'-'+pc;let p=pecas.get(k);if(!p){p={side:m.side,t:[],m:[]};pecas.set(k,p)}p.t.push(t);p.m.push(m)});
+ if(!I){$('st').textContent='Cabeçalho do CSV de apontamentos não encontrado.';return}
+ const ff=$('ff').files[0];
+ if(ff){let H=null;await ler(ff,l=>{if(!H){if(l.startsWith('OF;')){const c=l.split(';').map(x=>x.trim());H={lo:c.indexOf('LOTE'),d:c.indexOf('DATA DE APONTAMENTO'),h:c.indexOf('HORA DO APONTAMENTO')}}return}
+  const s=l.split(';');if(s.length<4||!s[0].trim())return;st.fatLidas++;const n=parseInt(s[H.lo].replace(/\D/g,''),10),t=parseDT(s[H.d],s[H.h]);if(isNaN(n)||t==null)return;
+  const k=s[0].trim()+'-'+n,o=fat.get(k);if(o==null||t<o)fat.set(k,t)})}
+ for(const p of pecas.values())p.ix=p.t.map((_,i)=>i).sort((a,b)=>p.t[a]-p.t[b]||b-a);
+ S={st,nao,pecas,fat,fc};$('st').textContent=nf(pecas.size)+' peças carregadas.';gerar()}
+function calc(side,T0,T1,uf){
+ const F=FASES.filter(f=>f.side==side).map(f=>f.g),z=()=>Object.fromEntries(F.map(g=>[g,0])),ok=g=>g>=0&&g!=EXP,J=CONFIG.janelaDias==null?null:CONFIG.janelaDias*1440,
+ R={F,wi:z(),wf:z(),fic:z(),ent:z(),sai:z(),fat:z(),dsum:z(),dn:z(),exj:0,rows:[],aguard:[],fatJ:0,excl:0};
+ for(const [k,p] of S.pecas){if(p.side!=side)continue;
+  const ft=S.fat.get(k);if(uf&&ft!=null&&ft<=T0){R.excl++;continue}
+  let cur=-1,rk=-1,tl=-1,p0=-2,nw=0,left=false,cf=-3;const fw=ft!=null&&ft>T0&&ft<=T1;
+  // retrato em DE: fase do último apontamento até DE (e dentro da janela de dias)
+  const fin0=()=>{p0=cur==EXP?EXP:(J!=null&&tl>=0&&tl<T0-J)?-1:cur;if(p0==-1){cur=-1;rk=-1}};
+  for(const i of p.ix){const t=p.t[i],m=p.m[i];
+   if(p0==-2&&t>T0)fin0();
+   if(cf==-3&&fw&&t>ft)cf=cur;
+   if(t>T1)break;if(cur==EXP)continue;tl=t;
+   if(CONFIG.regraRetorno[side]&&cur>=0&&m.rk<rk)continue;
+   if(m.g!=cur){ // mudança de fase: entre DE e ATÉ cada fase alcançada soma "entraram", cada fase deixada soma "sairam"
+    if(p0!=-2){nw++;if(cur>=0){R.sai[cur]++;if(cur==p0)left=true}if(m.g==EXP)R.exj++;else R.ent[m.g]++}
+    cur=m.g;rk=m.rk}}
+  if(p0==-2)fin0();
+  if(fw&&cf==-3)cf=cur;if(fw&&ok(cf))R.fat[cf]++;
+  let p1=cur;
+  if(ok(cur)&&J!=null&&tl<T1-J){R.sai[cur]++;nw++;if(cur==p0)left=true;p1=-1} // sumiu do retrato em ATÉ (parada além da janela)
+  if(ok(p0))R.wi[p0]++;if(ok(p1))R.wf[p1]++;if(ok(p0)&&nw==0)R.fic[p0]++;
+  if(p1==EXP&&!(ft!=null&&ft<=T1))R.aguard.push(k);
+  const stt=p1==EXP?'Expedida':nw&&ok(p1)?'Moveu ('+nw+')':nw&&p0>=0?'Saiu':nw?'Passou':ok(p0)&&p0==p1?'Ficou':'';
+  if(stt)R.rows.push({k,f0:NM(p0),f1:NM(p1),st:stt})}
+ for(const [k,t] of S.fat)if(t>T0&&t<=T1&&S.pecas.get(k)?.side==side)R.fatJ++;
+ return R}
+const cls=b=>b==null?null:b<CONFIG.faixas[0]?0:b<CONFIG.faixas[1]?1:b<CONFIG.faixas[2]?2:3,CC=['good','','warn','bad'];
+function gerar(){if(!S)return;const side=$('fab').value,T0=dT('d0'),T1=dT('d1');
+ if(T0==null||T1==null||T0>=T1||T0<S.fc){$('pr').innerHTML='<div class="box">Informe De e Até válidos (De &lt; Até, De ≥ data de corte).</div>';return}
+ const R=S.lastR=calc(side,T0,T1,$('uf').checked),F=R.F,sum=o=>F.reduce((a,g)=>a+o[g],0),days=Math.round((T1-T0)/1440),fd=t=>new Date(t*6e4).toISOString().slice(0,10).split('-').reverse().join('/')+' 06:00';
+ const bal=g=>R.ent[g]+R.sai[g]?R.ent[g]/(R.ent[g]+R.sai[g]):null,
+  bl=F.filter(g=>!CONFIG.totalBalancoExclui.includes(FASES[g].n)&&bal(g)!=null).map(bal),bt=bl.length?bl.reduce((a,b)=>a+b)/bl.length:null,wiT=sum(R.wi),wfT=sum(R.wf);
+ $('ttl').textContent='Work in Process '+side;$('sub').textContent='Variação de '+days+' dias · '+fd(T0)+' até '+fd(T1);
+ const kp=[['WIP em De',wiT],['WIP em Até',wfT],['Variação',(wfT-wiT>0?'+':'')+(wfT-wiT)],['Peças paradas',sum(R.fic)],['Entraram',sum(R.ent)],['Saíram',sum(R.sai)],['Faturadas na janela',R.fatJ],['Expedidas na janela',R.exj],['Expedidas sem faturar',R.aguard.length]];
+ let h='<div class="kpis">'+kp.map(a=>`<div class="kpi"><span>${a[0]}</span><b>${typeof a[1]=='number'?nf(a[1]):a[1]}</b></div>`).join('')+'</div>';
+ h+='<div class="box" id="chart"><h3>Fluxo por fase e balanço</h3><div id="cs">'+barras(R)+'</div><div class="lg"><span><i style="background:var(--gray)"></i>Ficaram</span><span><i style="background:var(--good)"></i>Entraram</span><span><i style="background:var(--bad)"></i>Saíram</span><span><i class="w" style="background:var(--wf)"></i>Faturadas (fase do faturamento)</span><span>Linha superior = WIP em Até · Linha = balanço (50% é o ideal; fase sem movimento = 50%)</span></div></div>';
+ const hd=F.map(g=>`<th>${FASES[g].n}</th>`).join(''),row=(n,f,t)=>`<tr><td>${n}</td>${F.map(g=>`<td>${f(g)}</td>`).join('')}<td><b>${t}</b></td></tr>`,pp=g=>R.wi[g]?pct(R.fic[g]/R.wi[g]):'—',ct=b=>{const c=cls(b);return c==null?'—':`<span class="${CC[c]}">${CONFIG.rotulos[c]}</span>`};
+ h+=`<div class="box"><h3>Em ${days} dias de produção</h3><table><tr><th>Fase</th>${hd}<th>Total</th></tr>`+
+  row('WIP em De',g=>R.wi[g],wiT)+row('Entraram',g=>R.ent[g],sum(R.ent))+row('Saíram',g=>R.sai[g],sum(R.sai))+row('WIP em Até',g=>R.wf[g],wfT)+row('WIP parado',pp,wiT?pct(sum(R.fic)/wiT):'—')+row('Peças paradas',g=>R.fic[g],sum(R.fic))+row('Balanço',g=>pct(bal(g)),pct(bt))+row('Gargalo',g=>ct(bal(g)),ct(bt))+'</table></div>';
+ $('pr').innerHTML=h;
+ const rs=R.rows.sort((a,b)=>a.k.localeCompare(b.k)),op=['Todos',...new Set(rs.map(r=>r.st.split(' ')[0]))];
+ S.rows=rs;S.aguard=R.aguard;
+ $('pl').innerHTML=`<div class="bar np"><label>Situação<select id="fs">${op.map(o=>`<option>${o}</option>`).join('')}</select></label><button id="ex">Exportar CSV</button></div><div class="box" id="tb"></div><div class="box"><h3>Expedidas ainda sem faturamento (${R.aguard.length})</h3>${R.aguard.slice(0,CONFIG.maxLinhasLista).join(', ')||'Nenhuma'}</div>`;
+ $('fs').onchange=lista;$('ex').onclick=()=>exportarCSV(filtradas(),'wip_lista.csv');lista();analise(R)}
+const filtradas=()=>{const f=$('fs')?$('fs').value:'Todos';return S.rows.filter(r=>f=='Todos'||r.st.startsWith(f))};
+function lista(){const r=filtradas();$('tb').innerHTML=`<h3>${nf(r.length)} peças${r.length>CONFIG.maxLinhasLista?' (mostrando '+nf(CONFIG.maxLinhasLista)+'; o CSV exporta todas)':''}</h3><table><tr><th>OF-PC</th><th>Fase em De</th><th>Fase em Até</th><th>Situação</th></tr>`+r.slice(0,CONFIG.maxLinhasLista).map(x=>`<tr><td>${x.k}</td><td>${x.f0}</td><td>${x.f1}</td><td>${x.st}</td></tr>`).join('')+'</table>'}
+function exportarCSV(rows,nome){const t='\ufeffOF-PC;Fase em De;Fase em Ate;Situacao\n'+rows.map(x=>[x.k,x.f0,x.f1,x.st].join(';')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download=nome;a.click()}
+function analise(R){const s=S.st,nao=[...S.nao].sort((a,b)=>b[1].c-a[1].c),k=(a,b)=>`<tr><td>${a}</td><td>${nf(b)}</td></tr>`;
+ $('pa').innerHTML=`<div class="box"><h3>Apontamentos</h3><table>${k('Linhas lidas',s.lidas)}${k('Linhas I (paradas, ignoradas)',s.linhasI)}${k('Tipo fora de P/I (descartadas)',s.tipoInv)}${k('Qtd.Prod fora de 0/1 (descartadas)',s.qtdInv)}${k('Incompletas (descartadas)',s.incompleta)}${k('Anteriores à data de corte (descartadas)',s.antesCorte)}${k('Recurso não mapeado (descartadas)',nao.reduce((a,b)=>a+b[1].c,0))}${k('Linhas usadas',s.usadas)}${k('Peças (OF-PC) únicas',S.pecas.size)}${k('Linhas com op ≠ 6 primeiros dígitos de OP',s.opDiv)}</table></div>
+ <div class="box"><h3>Faturadas</h3><table>${k('Linhas lidas',s.fatLidas)}${k('OF-PC únicas',S.fat.size)}${k('Com apontamento na base',[...S.fat.keys()].filter(x=>S.pecas.has(x)).length)}${k('Removidas do WIP neste cálculo',R.excl)}</table></div>
+ <div class="box"><h3>Recursos não mapeados (${nao.length})</h3><table><tr><th>Recurso</th><th>Descrição</th><th>Linhas</th></tr>${nao.slice(0,100).map(a=>`<tr><td>${a[0]}</td><td>${a[1].d}</td><td>${nf(a[1].c)}</td></tr>`).join('')}</table></div>`}
+function barras(R){const F=R.F,W=Math.max(780,F.length*64+110),H=380,L=44,Rr=52,Tp=62,B=32,ch=H-Tp-B,cw=(W-L-Rr)/F.length,
+ mp=Math.max(1,...F.map(g=>R.fic[g]+R.ent[g]))*1.1,mn=Math.max(0,...F.map(g=>R.sai[g]+R.fat[g])),k=ch/(mp+mn),y0=Tp+mp*k,
+ nice=v=>{const p=Math.pow(10,Math.floor(Math.log10(v)));return [1,2,2.5,5,10].map(f=>f*p).find(f=>f>=v)},st=nice((mp+mn)/4),
+ cs=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim(),bw=document.documentElement.classList.contains('pm-bw'),
+ hx=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16)),mx=(a,b,t)=>'rgb('+a.map((v,i)=>Math.round(v+(b[i]-v)*t)).join(',')+')',
+ cG=hx(cs('--good')[0]=='#'?cs('--good'):'#5fae8a'),cA=hx(cs('--ac')[0]=='#'?cs('--ac'):'#2f9bf0'),cR=hx(cs('--bad')[0]=='#'?cs('--bad'):'#e0564f'),
+ lc=v=>{if(bw)return 'var(--tx)';const d=Math.abs(v-50)/50;return d<=.5?mx(cG,cA,d/.5):mx(cA,cR,(d-.5)/.5)},
+ yb=v=>Tp-18+ch*.5*(1-v/100),gr=(id,c,o)=>`<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(${c})"/><stop offset="1" style="stop-color:var(${c});stop-opacity:${o}"/></linearGradient>`;
+ let s=`<svg viewBox="0 0 ${W} ${H}" width="100%"><defs>${gr('gS','--gray',.7)}${gr('gG','--good',.62)}${gr('gB','--bad',.72)}${gr('gW','--wf',.7)}
+ <filter id="sh" x="-30%" y="-10%" width="160%" height="130%"><feDropShadow dx="0" dy="4" stdDeviation="4" style="flood-color:var(--bg)" flood-opacity=".38"/></filter>
+ <pattern id="hat" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" style="stroke:var(--bg1);stroke-width:1.5"/></pattern>
+ <linearGradient id="lg" gradientUnits="userSpaceOnUse" x1="0" x2="0" y1="${yb(100)}" y2="${yb(0)}">${[100,75,50,25,0].map((v,i)=>`<stop offset="${i/4}" stop-color="${lc(v)}"/>`).join('')}</linearGradient></defs>
+ <text x="3" y="12" style="fill:var(--faint);font-size:10px">peças</text><text x="3" y="34" style="fill:var(--faint);font-size:10px">WIP</text><text x="${W}" y="12" text-anchor="end" style="fill:var(--ac);font-size:10px">balanço (%)</text>`;
+ const ln=(y,l)=>`<line x1="${L}" x2="${W-Rr}" y1="${y}" y2="${y}" stroke-dasharray="${l==0?0:'3 5'}" style="stroke:var(--bd)"/><text x="${L-8}" y="${y+4}" text-anchor="end" style="fill:var(--faint)">${l}</text>`;
+ for(let v=0;v<=mp;v+=st)s+=ln(y0-v*k,v);for(let v=st;v<=mn;v+=st)s+=ln(y0+v*k,-v);
+ [0,25,50,75,100].forEach(v=>s+=`<line x1="${W-Rr}" x2="${W-Rr+4}" y1="${yb(v)}" y2="${yb(v)}" style="stroke:${lc(v)};opacity:.7"/><text x="${W-Rr+8}" y="${yb(v)+4}" style="fill:${lc(v)}">${v}%</text>`);
+ s+=`<line x1="${L}" x2="${W-Rr}" y1="${yb(50)}" y2="${yb(50)}" stroke-dasharray="1 4" style="stroke:var(--good);opacity:.7"/>`;
+ const pts=[],tops=[];
+ F.forEach((g,i)=>{const x=L+i*cw+cw*.16,w=cw*.68,cx=x+w/2,r=Math.min(6,w/2),hs=R.fic[g]*k,he=R.ent[g]*k,hn=R.sai[g]*k,hf=R.fat[g]*k,top=y0-hs-he;tops[i]=top;
+  const seg=(y,h,f,v,c)=>{if(!h)return '';let o=`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#${f})"/>`;if(f=='gW')o+=`<rect class="hatch" x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#hat)"/>`;if(h>15)o+=`<text class="n ${c||''}" x="${cx}" y="${y+h/2+4}" text-anchor="middle">${v}</text>`;return o},
+  col=(y,h,base,id,inner)=>h>0?`<clipPath id="${id}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}"/></clipPath><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" filter="url(#sh)" style="fill:${base}"/><g class="cg" clip-path="url(#${id})">${inner}</g>`:'';
+  s+=`<g><title>${FASES[g].n}: ficaram ${R.fic[g]} · entraram ${R.ent[g]} · saíram ${R.sai[g]} · faturadas ${R.fat[g]} · WIP em Até ${R.wf[g]}</title>`+
+   col(top,hs+he,'var(--gray)','u'+i,seg(y0-hs,hs,'gS',R.fic[g])+seg(top,he,'gG',R.ent[g]))+
+   col(y0,hn+hf,'var(--bad)','d'+i,seg(y0,hn,'gB','-'+R.sai[g],'nb')+seg(y0+hn,hf,'gW','-'+R.fat[g]))+
+   `<text class="lb" x="${cx}" y="34" text-anchor="middle" style="font-size:12px">${R.wf[g]}</text><text x="${cx}" y="${H-10}" text-anchor="middle" style="font-size:12px">${FASES[g].n}</text></g>`;
+  const t=R.ent[g]+R.sai[g];const bv=t?R.ent[g]/t*100:50;pts.push([cx,yb(bv),bv,i])});
+ const curve=P=>{const n=P.length;if(n<2)return '';const dx=[],dy=[],m=[],f=v=>v.toFixed(1);for(let i=0;i<n-1;i++){dx[i]=P[i+1][0]-P[i][0];dy[i]=(P[i+1][1]-P[i][1])/dx[i]}
+  m[0]=dy[0];m[n-1]=dy[n-2];for(let i=1;i<n-1;i++)m[i]=dy[i-1]*dy[i]<=0?0:(dy[i-1]+dy[i])/2;
+  for(let i=0;i<n-1;i++){if(dy[i]===0){m[i]=m[i+1]=0}else{const a=m[i]/dy[i],b=m[i+1]/dy[i],h=a*a+b*b;if(h>9){const t=3/Math.sqrt(h);m[i]=t*a*dy[i];m[i+1]=t*b*dy[i]}}}
+  let d=`M${f(P[0][0])} ${f(P[0][1])}`;for(let i=0;i<n-1;i++){const h=dx[i]/3;d+=` C${f(P[i][0]+h)} ${f(P[i][1]+m[i]*h)} ${f(P[i+1][0]-h)} ${f(P[i+1][1]-m[i+1]*h)} ${f(P[i+1][0])} ${f(P[i+1][1])}`}return d};
+ let seg=[],cur=[];pts.forEach(p=>{if(!p){if(cur.length)seg.push(cur);cur=[]}else cur.push(p)});if(cur.length)seg.push(cur);
+ seg.forEach(q=>{s+=q.length>1?`<path d="${curve(q)}" fill="none" stroke="url(#lg)" stroke-width="2.5" stroke-linecap="round"/>`:''});
+ pts.forEach(p=>{if(!p)return;const [cx,cy,v,i]=p,tx=Math.round(v)+'%',bwd=tx.length*5.6+8,col=lc(v);let ly=cy-19;if(ly<38)ly=cy+7;
+  s+=`<g><title>${FASES[F[i]].n}: balanço ${v.toFixed(1)}%</title><rect x="${cx-bwd/2}" y="${ly}" width="${bwd}" height="13" rx="6.5" style="fill:var(--bg1);fill-opacity:.88;stroke:${col};stroke-opacity:.6"/><text x="${cx}" y="${ly+9.6}" text-anchor="middle" style="fill:${col};font-size:9px;font-weight:700">${tx}</text><circle cx="${cx}" cy="${cy}" r="4" style="fill:${col};stroke:var(--bg1);stroke-width:1.2"/></g>`});
+ return s+'</svg>'}
+const root=document.documentElement,mq=matchMedia('(prefers-color-scheme: light)');let tm='auto',prev=null;try{tm=localStorage.getItem('ds-theme')||'auto'}catch(_){}
+const redraw=()=>{if(S&&S.lastR&&$('cs'))$('cs').innerHTML=barras(S.lastR)};
+function theme(m){tm=m;try{localStorage.setItem('ds-theme',m)}catch(_){}root.dataset.theme=m=='auto'?(mq.matches?'light':'dark'):m;document.querySelectorAll('[data-ts]').forEach(b=>b.classList.toggle('on',b.dataset.ts==m));redraw()}
+document.querySelectorAll('[data-ts]').forEach(b=>b.onclick=()=>theme(b.dataset.ts));mq.addEventListener('change',()=>{if(tm=='auto')theme('auto')});theme(tm);
+addEventListener('beforeprint',()=>{prev=root.dataset.theme;root.dataset.theme='light';redraw()});addEventListener('afterprint',()=>{if(prev)root.dataset.theme=prev;root.classList.remove('pm-bw');redraw()});
+$('bP').onclick=()=>$('ov').hidden=false;$('pC').onclick=()=>$('ov').hidden=true;$('ov').onclick=e=>{if(e.target==$('ov'))$('ov').hidden=true};
+$('pG').onclick=()=>{$('ov').hidden=true;root.classList.toggle('pm-bw',$('pm').value=='bw');document.querySelector('.tabs button').click();setTimeout(()=>print(),60)};
+document.querySelectorAll('.tabs button').forEach(a=>a.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x==a));['r','l','a'].forEach(k=>$('p'+k).classList.toggle('on',k==a.dataset.t))});
+$('bA').onclick=()=>$('fa').click();$('bF').onclick=()=>$('ff').click();
+$('fa').onchange=$('ff').onchange=()=>{$('st').textContent='Apontamentos: '+($('fa').files[0]?.name||'—')+' · Faturadas: '+($('ff').files[0]?.name||'—')};
+$('go').onclick=carregar;['fab','d0','d1','uf'].forEach(i=>$(i).onchange=gerar);
+</script></body></html>
